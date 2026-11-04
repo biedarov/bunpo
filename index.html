@@ -4731,9 +4731,10 @@ function renderSummary() {
 function hideTip() { const t = document.getElementById('tip'); if (t) t.hidden = true; }
 function showTip(html, x, y) {
   const t = document.getElementById('tip'); t.innerHTML = html; t.hidden = false;
-  const r = t.getBoundingClientRect();
-  t.style.left = Math.max(8, Math.min(innerWidth - r.width - 8, x + 12)) + 'px';
-  t.style.top = Math.max(8, y - r.height - 10) + 'px';
+  // Страница может быть увеличена (zoom на html): мышь в экранных пикселях, а left/top — в пикселях страницы
+  const z = parseFloat(document.documentElement.style.zoom) || 1, r = t.getBoundingClientRect();
+  t.style.left = Math.max(8, Math.min(innerWidth - r.width - 8, x + 12)) / z + 'px';
+  t.style.top = Math.max(8, y - r.height - 10) / z + 'px';
 }
 document.addEventListener('mousemove', e => {
   const el = e.target.closest && e.target.closest('[data-tip]');
