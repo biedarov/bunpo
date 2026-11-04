@@ -698,8 +698,6 @@ td.cz { border-radius: 0; }
 .learn-row .cell.due::after { inset: 6px; }
 .learn-row .cells { gap: 4px; }
 .learn-row .book-card { padding: 12px 18px; }
-/* Слова в помощь: читаются так же, как сам вопрос */
-.qz-help span { font-size: 15px; color: var(--ink-2); }
-.qz-help i { font: normal 500 clamp(22px, 1.7vw, 30px)/2.1 var(--jp); padding: 4px 16px; border-radius: 12px; background: var(--sunk); border: 1px solid var(--line-2); color: var(--ink); opacity: 1; }
-.qz-help i rt { font-size: .45em; color: var(--ink-2); }
-.qz-help i .ja { color: var(--ink); }
+
+/* Только фуригана над словами в помощь: крупнее и светлее */
+.qz-help i rt { font-size: .55em; color: var(--ink-2); }

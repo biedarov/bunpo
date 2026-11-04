@@ -39,7 +39,7 @@ async function pullCloud() {
   } catch (e) { cloudStatus = 'error'; }
 }
 // ─── Синхронизация по коду (свой сервер, для всех устройств) ──
-const SYNC_URL = '', SYNC_KEY = '';
+const SYNC_URL = 'https://esaapwjyheyfmxcsndjf.supabase.co', SYNC_KEY = 'sb_publishable_ufy0tVtVNtXVPH_Zp7cqkg_GnjmKLQl';
 let syncCode = (() => { try { return localStorage.getItem('bunpo.sync') || ''; } catch (e) { return ''; } })();
 let syncMsg = '';
 const syncOn = () => !!(SYNC_URL && syncCode);
@@ -48,8 +48,8 @@ async function syncCall(fn, args) {
   if (!r.ok) throw new Error('sync ' + r.status);
   return r.status === 204 ? null : r.json();
 }
-const codeCloud = { set: data => syncCall('put_progress', { p_code: syncCode, p_data: data, p_updated: data.updated || Date.now() }),
-  get: async () => { const d = await syncCall('get_progress', { p_code: syncCode }); return { exists: !!d, data: () => d }; } };
+const codeCloud = { set: data => syncCall('bunpo_put', { p_code: syncCode, p_data: data, p_updated: data.updated || Date.now() }),
+  get: async () => { const d = await syncCall('bunpo_get', { p_code: syncCode }); return { exists: !!d, data: () => d }; } };
 function newSyncCode() {
   const L = 'ABCDEFGHJKLMNPQRSTUVWXYZ', a = new Uint32Array(6); crypto.getRandomValues(a);
   return [0, 1, 2].map(i => L[a[i] % L.length]).join('') + '-' + [3, 4, 5].map(i => a[i] % 10).join('');
