@@ -148,14 +148,6 @@ function fit() {
 }
 window.addEventListener('resize', fit);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
-// На широком мониторе всё увеличивается, чтобы читалось с обычного расстояния
-function scaleUi() {
-  const w = window.innerWidth, z = w >= 2200 ? 1.45 : w >= 1700 ? 1.3 : w >= 1400 ? 1.15 : 1;
-  document.documentElement.style.zoom = z;
-  document.documentElement.style.setProperty('--vw', (w / z) + 'px');
-  document.documentElement.style.setProperty('--vh', (window.innerHeight / z) + 'px');
-}
-scaleUi(); window.addEventListener('resize', scaleUi);
 function render() {
   document.body.classList.toggle('no-furi', !st.furigana);
   if (st.theme === 'auto') document.documentElement.removeAttribute('data-theme');
@@ -597,12 +589,15 @@ function ctxHtml(src) {
 // Строка вопроса: ＿＿ превращается в ячейку, хвостовая (подсказка по-русски) — в метку
 function askHtml(text, kind) {
   let t = String(text), hint = '', asked = false;
-  if (/^Q:s*/.test(t)) { asked = true; t = t.replace(/^Q:s*/, ''); }
+  let lead = '';
+  if (/^Q:\s*/.test(t)) { asked = true; t = t.replace(/^Q:\s*/, ''); }
+  // «Ситуация. Q: вопрос» — ситуация отдельной строкой, вопрос крупно
+  const mm = t.match(/^(.+?)\s+Q:\s*(.+)$/); if (mm) { lead = mm[1]; t = mm[2]; asked = true; }
   const h = t.match(/\s*\(([^()]*[а-яё][^()]*)\)\s*$/i);
   if (h) { hint = h[1]; t = t.slice(0, h.index); }
   const ja = /[぀-ヿ㐀-鿿]/.test(t.replace(/\([^)]*\)/g, '')) && !/[а-яё]{3}/i.test(t.split('→')[0].split(':')[0]) ;
   const html = rich(t).replace(/＿+/g, '<span class="gap"></span>');
-  const label = asked ? '<div class="qz-lab">Тебя спрашивают:</div>' : '';
+  const label = (lead ? `<div class="qz-situ">${rich(lead)}</div>` : '') + (asked ? '<div class="qz-lab">Тебя спрашивают:</div>' : '');
   const task = hint ? `<div class="qz-task">${asked ? 'Смысл ответа' : kind === 'i' ? 'Нужно' : 'Подсказка'}: <b>${rich(hint)}</b></div>` : '';
   return `${label}<p class="qz-ask ${ja ? 'jp' : ''}" ${ja ? 'lang="ja"' : ''}>${html}</p>${task}`;
 }
