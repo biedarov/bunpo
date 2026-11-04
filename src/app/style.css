@@ -714,3 +714,17 @@ td.cz { border-radius: 0; }
 .ltype-how { font-size: 12px; }
 /* Ситуация над вопросом «Тебя спрашивают» */
 .qz-situ { font-size: clamp(17px, 1.3vw, 22px); color: var(--ink); }
+
+/* ── Ровная раскладка главной ── */
+/* Клетки урока растягиваются на всю ширину строки: 8 равных колонок, процент сразу справа */
+.learn-row .g-row { grid-template-columns: 26px minmax(0, 1fr) 42px; gap: 10px; min-height: 0; }
+.learn-row .cells { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 5px; }
+.learn-row .cell { width: auto; height: 22px; border-radius: 6px; }
+.learn-row .cell.due::after { inset: 50% auto auto 50%; width: 8px; height: 8px; transform: translate(-50%, -50%); }
+.learn-row .book-rows { display: grid; gap: 6px; }
+/* «Что учить»: у каждого пункта одинаково — название сверху, цифры снизу */
+.ltype { display: grid; gap: 1px; justify-items: start; text-align: left; }
+.ltype em { margin: 0; }
+/* Кольцо памяти по центру карточки */
+.ring-card { justify-content: center; align-content: center; }
+.bento { align-items: stretch; }
