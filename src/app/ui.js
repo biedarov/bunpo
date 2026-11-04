@@ -148,6 +148,14 @@ function fit() {
 }
 window.addEventListener('resize', fit);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+// На широком мониторе всё увеличивается, чтобы читалось с обычного расстояния
+function scaleUi() {
+  const w = window.innerWidth, z = w >= 2200 ? 1.45 : w >= 1700 ? 1.3 : w >= 1400 ? 1.15 : 1;
+  document.documentElement.style.zoom = z;
+  document.documentElement.style.setProperty('--vw', (w / z) + 'px');
+  document.documentElement.style.setProperty('--vh', (window.innerHeight / z) + 'px');
+}
+scaleUi(); window.addEventListener('resize', scaleUi);
 function render() {
   document.body.classList.toggle('no-furi', !st.furigana);
   if (st.theme === 'auto') document.documentElement.removeAttribute('data-theme');
