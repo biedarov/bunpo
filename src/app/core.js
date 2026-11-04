@@ -250,3 +250,16 @@ function sentFrom(q, n) {
   return null;
 }
 TOPICS.forEach(t => { t.sq = [...t.bq, ...(t.q || [])].map(sentFrom).filter(Boolean); });
+
+// Ошибка в режиме «дрочка»: стабильность падает, процент темы сразу ниже, повтор ближе
+function penalize(card, now = Date.now()) {
+  if (!card) return null;
+  const before = memoryOf(card, now);
+  // Минус 10 процентных пунктов: стабильность ниже и как будто прошло больше времени с повтора
+  card.S = Math.max(0.3, card.S * 0.8);
+  const target = Math.max(0.3, before - 0.1);
+  const t = card.S / F * (Math.pow(target, 1 / DECAY) - 1);
+  card.last = now - t * DAY;
+  card.due = Math.min(card.due, dayNum(card.last) + intervalDays(card.S));
+  return [before, memoryOf(card, now)];
+}

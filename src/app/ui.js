@@ -38,7 +38,37 @@ async function pullCloud() {
     cloudStatus = 'cloud';
   } catch (e) { cloudStatus = 'error'; }
 }
+// ─── Синхронизация по коду (свой сервер, для всех устройств) ──
+const SYNC_URL = '', SYNC_KEY = '';
+let syncCode = (() => { try { return localStorage.getItem('bunpo.sync') || ''; } catch (e) { return ''; } })();
+let syncMsg = '';
+const syncOn = () => !!(SYNC_URL && syncCode);
+async function syncCall(fn, args) {
+  const r = await fetch(SYNC_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: { apikey: SYNC_KEY, Authorization: 'Bearer ' + SYNC_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(args) });
+  if (!r.ok) throw new Error('sync ' + r.status);
+  return r.status === 204 ? null : r.json();
+}
+const codeCloud = { set: data => syncCall('put_progress', { p_code: syncCode, p_data: data, p_updated: data.updated || Date.now() }),
+  get: async () => { const d = await syncCall('get_progress', { p_code: syncCode }); return { exists: !!d, data: () => d }; } };
+function newSyncCode() {
+  const L = 'ABCDEFGHJKLMNPQRSTUVWXYZ', a = new Uint32Array(6); crypto.getRandomValues(a);
+  return [0, 1, 2].map(i => L[a[i] % L.length]).join('') + '-' + [3, 4, 5].map(i => a[i] % 10).join('');
+}
+async function useSyncCode(code) {
+  syncCode = code.trim().toUpperCase();
+  try { localStorage.setItem('bunpo.sync', syncCode); } catch (e) {}
+  cloud = codeCloud;
+  await pullCloud();
+  syncMsg = cloudStatus === 'cloud' ? 'Готово: этот браузер синхронизируется по коду ' + syncCode + '.' : 'Не получилось связаться с сервером. Попробую ещё раз позже.';
+  render();
+}
 async function connectCloud() {
+  if (syncOn()) {
+    cloud = codeCloud; await pullCloud(); if (!S) render();
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !S) pullCloud(); });
+    setInterval(() => { if (!S) pullCloud(); }, 60000);
+    return;
+  }
   if (!window.claude || !window.claude.use) return;
   try {
     const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
@@ -115,6 +145,14 @@ function fit() {
 }
 window.addEventListener('resize', fit);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+// На широком мониторе всё увеличивается, чтобы читалось с обычного расстояния
+function scaleUi() {
+  const w = window.innerWidth, z = w >= 2200 ? 1.45 : w >= 1700 ? 1.3 : w >= 1400 ? 1.15 : 1;
+  document.documentElement.style.zoom = z;
+  document.documentElement.style.setProperty('--vw', (w / z) + 'px');
+  document.documentElement.style.setProperty('--vh', (window.innerHeight / z) + 'px');
+}
+scaleUi(); window.addEventListener('resize', scaleUi);
 function render() {
   document.body.classList.toggle('no-furi', !st.furigana);
   if (st.theme === 'auto') document.documentElement.removeAttribute('data-theme');
@@ -129,7 +167,7 @@ function render() {
       <div class="brand"><b lang="ja">文法</b><span>Bunpō</span></div>
       <nav class="nav">${navItem('today', 'Сегодня', due + nw || '')}${navItem('sheet', 'Шпаргалка')}${navItem('map', 'Карта форм')}${navItem('settings', 'Настройки')}</nav>
     </aside>
-    <main class="main"><div class="col ${view === 'map' || view === 'news' ? '' : 'fit'} view-${view}">${body}</div></main>
+    <main class="main"><div class="col ${view === 'sheet' ? 'fit' : ''} view-${view}">${body}</div></main>
     <nav class="bottom">${[['today', 'Сегодня'], ['sheet', 'Шпаргалка'], ['map', 'Карта'], ['settings', 'Ещё']].map(([v, l]) => `<button class="${view === v ? 'on' : ''}" data-go="${v}">${l}</button>`).join('')}</nav>
   </div>`;
   fit();
@@ -158,7 +196,7 @@ function viewToday() {
   const finish = left ? today + Math.ceil(after / st.perDay) : null;
   const sub = due.length + nw.length ? `≈ ${mins} мин · сделано ${doneTotal} из ${planTotal}` : tomorrowPlan();
   const plan = `<section class="plan"><div class="plan-t"><div class="eyebrow">${WEEK[d.getDay()]}, ${d.getDate()} ${MONTHS_FULL[d.getMonth()]} · день ${dayNo}</div><h1>${head}</h1><p>${sub}</p></div>
-    ${due.length + nw.length ? `<button class="btn" data-act="start">${doneTotal ? 'Продолжить' : 'Начать'}</button>` : ''}</section>`;
+    <div class="plan-btns">${due.length + nw.length ? `<button class="btn" data-act="start">${doneTotal ? 'Продолжить' : 'Начать'}</button>` : ''}${learned ? '<button class="btn btn-2" data-act="drill" title="Случайные вопросы по всем пройденным темам. Ошибка снижает процент темы.">Дрочка</button>' : ''}</div></section>`;
   return `<div class="bento"><div class="b-left">${plan}${statTiles(now, learned, left, finish, todayLog)}</div>${memoryRing(now)}</div><div class="learn-row"><div class="books">${BOOKS.map(b => bookCard(b, now)).join('')}</div>${learnPanel(now)}</div>
     <div class="charts">${learned ? forecastChart() : ''}</div>`;
 }
@@ -334,7 +372,7 @@ function viewMap() {
 let backupText = '', backupMsg = '', resetArm = false;
 function viewSettings() {
   const seg = (key, opts) => `<div class="seg">${opts.map(([v, l]) => `<button class="${String(st[key]) === String(v) ? 'on' : ''}" data-set="${key}" data-val="${v}">${l}</button>`).join('')}</div>`;
-  const syncText = { cloud: 'Прогресс сохраняется в твой аккаунт Claude и в браузер.', local: 'Прогресс сохраняется только в этом браузере. Делай резервную копию.', error: 'Облако сейчас недоступно, прогресс сохранён в браузере. Синхронизация повторится сама.' }[cloudStatus];
+  const syncText = { cloud: syncOn() ? 'Прогресс сохраняется на сервер по коду ' + syncCode + ' и в браузер.' : 'Прогресс сохраняется в твой аккаунт Claude и в браузер.', local: 'Прогресс сохраняется только в этом браузере. Делай резервную копию.', error: 'Облако сейчас недоступно, прогресс сохранён в браузере. Синхронизация повторится сама.' }[cloudStatus];
   return `<header class="today-h"><h1>Настройки</h1><p>${esc(syncText)}</p></header>
   <section class="set">
     <div class="set-r"><div>Новых тем в день<span>Уроки 1–12 идут без лимита, дальше по этому числу.</span></div><input class="num" id="perday" type="number" min="0" step="1" inputmode="numeric" value="${st.perDay}" aria-label="Новых тем в день"></div>
@@ -342,8 +380,13 @@ function viewSettings() {
     <div class="set-r"><div>Верные ответы в тренировке<span>Сразу к следующему заданию или по кнопке.</span></div>${seg('auto', [[true, 'Сразу'], [false, 'По кнопке']])}</div>
     <div class="set-r"><div>Тема оформления</div>${seg('theme', [['auto', 'Система'], ['light', 'Светлая'], ['dark', 'Тёмная']])}</div>
   </section>
+  <section class="sync"><div class="sec-h"><h2>Синхронизация между устройствами</h2></div>
+    ${!SYNC_URL ? '<p class="empty">Сервер синхронизации ещё не подключён.</p>' : syncCode
+      ? `<p>Код этого устройства: <b class="sync-code">${esc(syncCode)}</b>. Введи его один раз на другом устройстве, и прогресс будет общий.</p><div class="row-btns"><button class="linkish" data-act="sync-off">Отключить на этом устройстве</button></div>`
+      : `<p>Первое устройство: создай код. На остальных один раз введи этот же код.</p><div class="row-btns"><button class="btn btn-sm" data-act="sync-new">Создать код</button><input class="num sync-in" id="sync-code" placeholder="ABC-123" maxlength="7" autocomplete="off" aria-label="Код синхронизации"><button class="btn btn-2 btn-sm" data-act="sync-use">Ввести код</button></div>`}
+    ${syncMsg ? `<p class="empty">${esc(syncMsg)}</p>` : ''}</section>
   <section><div class="sec-h"><h2>Как считается память</h2></div>
-    <ul class="notes"><li>Расписание автоматическое: новые темы и повторы приходят сами, сначала повторы, потом новое.</li><li>Насколько помнишь, оцениваешь ты сам: открываешь тему, читаешь и ставишь оценку от «Забыл» до «Легко».</li><li>Процент — расчётная вероятность вспомнить тему. Считается по твоим оценкам и времени с последнего повтора (формула FSRS-5).</li><li>Повтор назначается на день, когда процент дойдёт примерно до 90%.</li><li>Задания — только тренировка по желанию. На процент и расписание они не влияют.</li><li>Новый день начинается в 04:00.</li></ul></section>
+    <ul class="notes"><li>Расписание автоматическое: новые темы и повторы приходят сами, сначала повторы, потом новое.</li><li>После каждой темы идут вопросы. Процент верных с первого раза ставит оценку сам.</li><li>Процент — расчётная вероятность вспомнить тему. Считается по ответам и времени с последнего повтора (формула FSRS-5).</li><li>Повтор назначается на день, когда процент дойдёт примерно до 90%.</li><li>В режиме «Дрочка» каждая ошибка сразу снижает процент темы, и она раньше вернётся на повтор.</li><li>Новый день начинается в 04:00.</li></ul></section>
   <section><div class="sec-h"><h2>Резервная копия</h2></div>
     <div class="row-btns"><button class="btn btn-2 btn-sm" data-act="export">Показать копию</button><button class="btn btn-2 btn-sm" data-act="copy">Скопировать</button><button class="btn btn-2 btn-sm" data-act="import">Загрузить из поля</button></div>
     <p class="empty" id="backup-msg">${esc(backupMsg)}</p>
@@ -447,7 +490,24 @@ function startPractice(id) {
   UNDO = [];
   startQuiz();
 }
+// Дрочка: случайный вопрос по пройденной теме, слабые темы выпадают чаще. Ошибка — минус процент.
+function drillPool() { const ids = Object.keys(st.cards).filter(id => BY_ID[id]); return ids.length ? ids : TOPICS.filter(t => t.lesson <= 2).map(t => t.id); }
+function drillNext() {
+  const ids = drillPool(), now = Date.now();
+  const w = ids.map(id => st.cards[id] ? 1.15 - memoryOf(st.cards[id], now) : 1);
+  let r = Math.random() * w.reduce((a, b) => a + b, 0), i = 0;
+  while (r > w[i] && i < ids.length - 1) { r -= w[i]; i++; }
+  const id = ids[i], q = quizFor(BY_ID[id], 1)[0];
+  return q ? { q: q.q, id } : null;
+}
+function startDrill() {
+  S = { practice: true, drill: true, queue: [{ id: 'drill', mode: 'drill' }], i: 0, item: { id: TOPICS[0].id, mode: 'drill' }, topic: TOPICS[0], qs: [], t: 0, ok: 0, bad: 0, miss: [], phase: 'task', hits: {} };
+  UNDO = [];
+  S.qs.push(drillNext());
+  beginTask(); render(); window.scrollTo(0, 0); focusInput();
+}
 function beginTask() {
+  if (S.drill) { S.item = { id: S.qs[S.t].id, mode: 'drill' }; S.topic = BY_ID[S.qs[S.t].id]; }
   const q = S.qs[S.t].q;
   S.q = q; S.answered = null; S.typed = '';
   if (q.k === 'c') S.opts = shuffle(q.o.map((text, i) => ({ text, right: i === 0 })));
@@ -459,7 +519,9 @@ function submit(ok, extra) {
   pushUndo();
   const cur = S.qs[S.t];
   S.answered = { ok, ...extra };
-  if (!cur.retry) { if (ok) S.ok++; else { S.bad++; S.miss.push(S.t); S.qs.push({ q: cur.q, retry: true }); } }
+  if (S.drill) {
+    if (ok) S.ok++; else { S.bad++; const p = penalize(st.cards[cur.id]); if (p) { S.answered.drop = p; save(); } }
+  } else if (!cur.retry) { if (ok) S.ok++; else { S.bad++; S.miss.push(S.t); S.qs.push({ q: cur.q, retry: true }); } }
   render();
   if (ok && st.auto) S.timer = setTimeout(advance, 850);
 }
@@ -468,6 +530,7 @@ function acceptAnswer() {
   pushUndo();
   const cur = S.qs[S.t];
   S.answered.ok = true;
+  if (S.drill) { S.ok++; S.bad--; render(); return; }
   if (!cur.retry) { S.ok++; S.bad--; S.miss = S.miss.filter(i => i !== S.t); const j = S.qs.findIndex((x, i) => i > S.t && x.retry && x.q === cur.q); if (j >= 0) S.qs.splice(j, 1); }
   render();
 }
@@ -476,6 +539,7 @@ function advance() {
   if (!S.answered) return;
   pushUndo();
   S.t++;
+  if (S.drill && S.t >= S.qs.length) { const nx = drillNext(); if (nx) S.qs.push(nx); }
   if (S.t < S.qs.length) { beginTask(); render(); focusInput(); return; }
   S.phase = S.practice ? 'done' : 'result'; render(); window.scrollTo(0, 0);
 }
@@ -483,10 +547,10 @@ function focusInput() { const el = document.getElementById('answer'); if (el) se
 function renderSession() {
   if (S.phase === 'done') { renderSummary(); return; }
   const total = S.queue.length, it = S.item, t = S.topic;
-  const modeName = { new: 'Новая тема', review: 'Повторение', relearn: 'Ещё раз', practice: 'Тренировка, на память не влияет' }[it.mode];
+  const modeName = { drill: 'Дрочка', new: 'Новая тема', review: 'Повторение', relearn: 'Ещё раз', practice: 'Тренировка, на память не влияет' }[it.mode];
   const inQuiz = S.phase === 'task', n = inQuiz ? S.qs.length : 0;
-  const counter = (S.practice ? '' : `Тема <b>${S.i + 1}</b> из ${total} · `) + (inQuiz ? `вопрос <b>${S.t + 1}</b> из ${n}${S.qs[S.t].retry ? ' · ещё раз' : ''}` : modeName);
-  const share = S.practice ? S.t / Math.max(1, n) : (S.i + (inQuiz ? S.t / n * 0.9 : S.phase === 'result' ? 0.95 : 0)) / total;
+  const counter = S.drill ? `Дрочка · верно <b>${S.ok}</b> из ${S.ok + S.bad}` : (S.practice ? '' : `Тема <b>${S.i + 1}</b> из ${total} · `) + (inQuiz ? `вопрос <b>${S.t + 1}</b> из ${n}${S.qs[S.t].retry ? ' · ещё раз' : ''}` : modeName);
+  const share = S.drill ? (S.ok + S.bad ? S.ok / (S.ok + S.bad) : 0) : S.practice ? S.t / Math.max(1, n) : (S.i + (inQuiz ? S.t / n * 0.9 : S.phase === 'result' ? 0.95 : 0)) / total;
   const top = `<div class="sess-top"><div class="sess-r"><span>${counter}</span><button class="linkish undo" data-act="undo" ${UNDO.length ? '' : 'disabled'} title="Ctrl+Z">↶ Отменить</button><button class="linkish" data-act="exit">Выйти</button></div><div class="lbar"><i style="width:${share * 100}%"></i></div></div>`;
   const flash = S.flash && S.phase !== 'result' ? `<div class="flash">${S.flash}</div>` : '';
   let body = '', foot = '';
@@ -573,7 +637,7 @@ function taskHtml() {
     w = `<div class="tiles-ans ${ansCls}">${S.picked.map(id => { const x = S.pool.find(p => p.id === id); return `<button class="tile" ${a ? 'disabled' : ''} data-unpick="${id}">${rich(x.text)}</button>`; }).join('') || '<span class="tiles-ph">сюда встанут плитки</span>'}</div>
       <div class="tiles">${S.pool.map(p => `<button class="tile ${S.picked.includes(p.id) ? 'ghost' : ''}" ${a ? 'disabled' : ''} data-pick="${p.id}">${rich(p.text)}</button>`).join('')}</div>`;
   }
-  const fb = a ? `<div class="fb ${a.ok ? 'ok' : 'no'}"><div class="h">${a.ok ? 'Верно' : (a.skipped ? 'Правильный ответ' : 'Неверно. Правильно так:')}</div>${!a.ok ? `<div class="right ja" lang="ja">${rich(rightAnswer(q))}</div>` : ''}${q.w ? `<div class="why">${rich(q.w)}</div>` : ''}${q.k === 'i' && !a.ok && !a.skipped ? `<div class="fb-you">Ты написал: <span lang="ja">${esc(S.typed)}</span> <button class="linkish" data-act="accept">Мой ответ тоже верный</button></div>` : ''}</div>` : '';
+  const fb = a ? `<div class="fb ${a.ok ? 'ok' : 'no'}"><div class="h">${a.ok ? 'Верно' : (a.skipped ? 'Правильный ответ' : 'Неверно. Правильно так:')}</div>${!a.ok ? `<div class="right ja" lang="ja">${rich(rightAnswer(q))}</div>` : ''}${q.w ? `<div class="why">${rich(q.w)}</div>` : ''}${a.drop ? `<div class="fb-drop">${rich(t.t)}: память ${pct(a.drop[0])}% → <b>${pct(a.drop[1])}%</b></div>` : ''}${q.k === 'i' && !a.ok && !a.skipped ? `<div class="fb-you">Ты написал: <span lang="ja">${esc(S.typed)}</span> <button class="linkish" data-act="accept">Мой ответ тоже верный</button></div>` : ''}</div>` : '';
   const retry = S.qs[S.t].retry;
   return `<div class="quiz"><div class="qz-meta"><span>${rich(t.t)}</span>${q.s ? `<em class="q-src">учебник · ${q.s}</em>` : ''}${retry ? '<em class="q-src again">повтор ошибки · не в процент</em>' : ''}</div>
     <section class="qz-card">${q.pre ? preHtml(q.pre) : ''}${qHtml(q.q, q.k)}${q.pre ? "" : `<div class="qz-how">${KIND_HOW[q.full ? "full" : q.k]}</div>`}${q.help && q.help.length ? `<div class="qz-help"><span>Слова в помощь, нужную форму пиши сам:</span>${q.help.map(x => `<i lang="ja">${rich(x)}</i>`).join("")}</div>` : ""}${w}${fb}</section></div>`;
@@ -640,6 +704,10 @@ app.addEventListener('click', e => {
     case 'review-one': startSession([{ id: d.id, mode: 'review' }], true); break;
     case 'practice': startPractice(d.id); break;
     case 'undo': undo(); break;
+    case 'drill': startDrill(); break;
+    case 'sync-new': useSyncCode(newSyncCode()); break;
+    case 'sync-use': { const v = (document.getElementById('sync-code') || {}).value || ''; if (/^[A-Za-z]{3}-?\d{3}$/.test(v.trim())) useSyncCode(v.trim().replace(/^(\w{3})-?(\d{3})$/, '$1-$2')); else { syncMsg = 'Код вида ABC-123.'; render(); } break; }
+    case 'sync-off': syncCode = ''; try { localStorage.removeItem('bunpo.sync'); } catch (e) {} cloud = null; cloudStatus = 'local'; syncMsg = 'Синхронизация отключена на этом устройстве.'; render(); break;
     case 'accept': acceptAnswer(); break;
     case 'to-quiz': pushUndo(); startQuiz(); break;
     case 'commit': rate(autoGrade()); break;

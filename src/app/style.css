@@ -8,7 +8,7 @@
   --sans: "Onest", "Noto Sans JP", "Segoe UI", "Yu Gothic UI", Meiryo, system-ui, sans-serif;
   --jp: "Noto Sans JP", "Yu Gothic UI", "Hiragino Sans", Meiryo, sans-serif;
   --r: 22px;
-  --gut: max(24px, calc((100vw - 1240px) / 2));
+  --gut: max(24px, calc((var(--vw, 100vw) - 1240px) / 2));
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #09090C; --surface: rgba(255, 255, 255, .045); --sunk: rgba(255, 255, 255, .07); --line: rgba(255, 255, 255, .08); --line-2: rgba(255, 255, 255, .16);
@@ -665,3 +665,30 @@ td.cz { border-radius: 0; }
 .quiz .field.long input { text-align: left; font-size: clamp(22px, 1.6vw, 28px); }
 .fb-you { font-size: 15px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
 .fb-you span { font-family: var(--jp); color: var(--ink); font-size: 18px; }
+
+/* Главная: книги крупнее, панель «Что учить» уже */
+.learn-row { grid-template-columns: minmax(0, 1fr) 250px; }
+.learn-row .book-card { padding: 16px 20px; }
+.learn-row .g-row { min-height: 28px; grid-template-columns: 26px minmax(0, 1fr) 40px; gap: 8px; }
+.learn-row .cell { width: 22px; height: 22px; border-radius: 6px; }
+.learn-row .cell.due::after { inset: 6px; }
+.learn-row .cells { gap: 4px; }
+.learn-row .g-row .ln, .learn-row .g-row .lp { font-size: 13px; }
+.ltypes { padding: 12px; gap: 2px; }
+.ltypes .sec-h h2 { font-size: 15px; }
+.ltype { padding: 7px 10px; font-size: 14px; flex-wrap: wrap; gap: 0 8px; }
+.ltype em { font-size: 12px; }
+.ltype-hint, .ltype-how { font-size: 13px; }
+.plan-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.fb-drop { font-size: 15px; color: var(--bad); }
+.fb-drop b { color: var(--bad); }
+.sync p { margin: 0 0 8px; color: var(--ink-2); }
+.sync-code { font: 600 20px/1 ui-monospace, Consolas, monospace; color: var(--ink); letter-spacing: .06em; }
+.sync-in { width: 120px; text-transform: uppercase; letter-spacing: .06em; }
+@media (max-width: 1100px) { .learn-row { grid-template-columns: minmax(0, 1fr); } }
+.learn-row .g-row { min-height: 34px; grid-template-columns: 28px minmax(0, 1fr) 44px; }
+.learn-row .cell { width: 28px; height: 28px; border-radius: 8px; }
+.learn-row .cell.due::after { inset: 8px; }
+.learn-row .cells { gap: 5px; }
+.learn-row .g-row .ln, .learn-row .g-row .lp { font-size: 14px; }
+.learn-row .book-h { font-size: 16px; }
