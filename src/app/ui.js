@@ -143,7 +143,7 @@ function fit() {
     const box = el.parentElement, cs = getComputedStyle(box), br = box.getBoundingClientRect();
     const room = br.height * (box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)) / box.clientHeight;
     const need = el.getBoundingClientRect().height;
-    if (need > room) el.style.zoom = Math.max(0.6, Math.floor(room / need * 100) / 100);
+    if (need > room) el.style.zoom = Math.max(0.6, Math.floor(room / need * 100 - 1) / 100);
   });
 }
 window.addEventListener('resize', fit);
@@ -247,7 +247,7 @@ function cellHtml(t, now) {
 function bookCard(b, now) {
   const ts = b.lessons.flatMap(l => l.topics), cs = ts.filter(t => st.cards[t.id]);
   const avg = cs.length ? cs.reduce((s, t) => s + memoryOf(st.cards[t.id], now), 0) / cs.length : null;
-  const row = l => { const m = lessonMemory(st, l.n); return `<div class="g-row" data-tip="${esc(l.n + '. ' + l.name)}"><span class="ln">${l.n}</span><div class="cells">${l.topics.map(t => cellHtml(t, now)).join('')}</div><span class="lp">${m === null ? '' : pct(m) + '%'}</span></div>`; };
+  const row = l => { const m = lessonMemory(st, l.n); return `<div class="g-row" data-tip="${esc(l.n + '. ' + l.name)}"><span class="ln">${l.n}</span><span class="lname">${esc(l.name)}</span><div class="cells">${l.topics.map(t => cellHtml(t, now)).join('')}</div><span class="lp">${m === null ? '' : pct(m) + '%'}</span></div>`; };
   return `<section class="book-card ${b.cls}"><div class="book-h"><h2><i></i>Genki ${b.n}</h2><span>${cs.length}/${ts.length} тем${avg === null ? '' : ' · память ' + pct(avg) + '%'}</span></div>
     <div class="book-bar"><i style="width:${cs.length / ts.length * 100}%"></i></div>
     <div class="book-rows">${b.lessons.map(row).join('')}</div></section>`;
@@ -321,10 +321,11 @@ function viewTopic() {
       <div class="t-meta">${bookTag(t)}${c ? `<span class="pill acc">память ${pct(memoryOf(c))}%</span>` : '<span class="pill">ещё не пройдена</span>'}</div>
       <h1 class="t-title">${rich(t.t)}</h1><p class="t-gist">${rich(t.g)}</p></header>
     ${topicBody(t)}
+  </div><div class="c2">${variantsHtml(t)}
     ${links ? `<div class="links">${links}</div>` : ''}
     ${c ? memoryCurve(c) : ''}
     <div class="row-btns">${c ? `<button class="btn btn-sm" data-act="review-one" data-id="${t.id}">Проверить себя</button>` : ''}<button class="btn btn-2 btn-sm" data-act="practice" data-id="${t.id}">Потренироваться</button></div>
-  </div><div class="c2">${variantsHtml(t)}</div></article>`;
+  </div></article>`;
 }
 function memoryCurve(c) {
   const r = memoryOf(c), m = (v, l) => `<div><b>${v}</b><span>${l}</span></div>`;
@@ -569,7 +570,9 @@ function renderSession() {
     body = flash + (S.showCard ? `<div class="peek">${cardOf()}</div>` : '') + taskHtml();
     foot = taskFoot();
   }
-  app.innerHTML = `<div class="sess phase-${S.phase}">${top}<div class="sess-body"><div class="sess-col">${body}</div></div>${foot}</div>`;
+  // На экране вопроса и итога кнопки стоят сразу под карточкой, а вся группа по центру экрана
+  const inside = S.phase === 'task' || S.phase === 'result';
+  app.innerHTML = `<div class="sess phase-${S.phase}">${top}<div class="sess-body"><div class="sess-col">${body}${inside ? foot : ''}</div></div>${inside ? '' : foot}</div>`;
   if (S.phase === 'task' && S.q.k === 'i' && !S.answered) focusInput();
 }
 function resultHtml() {
