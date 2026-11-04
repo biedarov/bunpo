@@ -359,7 +359,7 @@ function viewMap() {
       .map(i => ({ jp: typeof i[0] === 'function' ? i[0](c) : i[0], ru: i[1], id: i[2] })).sort((a, b) => idNum(a.id) - idNum(b.id));
     return `<section class="base"><div class="base-h"><b lang="ja">${furiHtml(title)}</b><span><strong>${esc(r.name)}</strong> — ${rich(r.sub)}</span></div>
       <p class="base-w">${rich(ROW_WHY[r.name])}</p>
-      <div class="forms">${items.map(i => `<button class="form ${memTint(i.id)}" data-topic="${i.id}"><span class="j ja" lang="ja">${furiHtml(i.jp)}</span><span class="p">${memTag(i.id)}</span><span class="r">${rich(i.ru)}</span></button>`).join('')}</div></section>`;
+      <div class="forms">${items.map(i => `<button class="form ${memTint(i.id)} ${plain(i.jp).replace(/\{[^}]*\}/g, '').length > 8 ? 'wide' : ''}" data-topic="${i.id}"><span class="j ja" lang="ja">${furiHtml(i.jp)}</span><span class="p">${memTag(i.id)}</span><span class="r">${rich(i.ru)}</span></button>`).join('')}</div></section>`;
   }).join('');
   return `<header class="today-h"><h1>Карта форм</h1><p>Одна форма глагола, всё, что к ней цепляется. Выбери глагол, нажми на форму, чтобы открыть тему.</p></header>
     <div class="map-bar"><div class="tabs">${MAP_VERBS.map((m, i) => `<button class="tab ${i === mapVerb ? 'on' : ''}" lang="ja" data-verb="${i}">${furiHtml(m.d || m.label)}</button>`).join('')}</div>
