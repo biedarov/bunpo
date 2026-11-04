@@ -1,0 +1,28 @@
+// Собирает всё в один файл: node src/build.mjs → bunpo.html
+import fs from 'node:fs';
+const root = new URL('.', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const read = f => fs.readFileSync(root + f, 'utf8');
+const data = fs.readdirSync(root + 'data').sort().map(f => read('data/' + f));
+const js = [read('app/helpers.js'), ...data, read('app/dict.js'), read('app/core.js'), read('app/map.js'), read('app/sheet.js'), read('app/ui.js')].join('\n');
+// Синтаксическая ошибка не должна попасть на сайт
+new Function(js);
+const html = `<title>Bunpō N5–N4</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+${read('app/style.css')}</style>
+<div id="app"></div>
+<div id="tip" hidden></div>
+<script>
+(function () {
+${js}
+})();
+</script>
+`;
+fs.writeFileSync(root + '../bunpo.html', html);
+// Отдельная обёртка, чтобы файл открывался двойным щелчком без публикации
+const standalone = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>\n${html}</body></html>`;
+fs.writeFileSync(root + '../bunpo-local.html', standalone);
+console.log('bunpo.html', (html.length / 1024).toFixed(0) + ' KB');
