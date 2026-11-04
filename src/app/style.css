@@ -692,3 +692,9 @@ td.cz { border-radius: 0; }
 .learn-row .cells { gap: 5px; }
 .learn-row .g-row .ln, .learn-row .g-row .lp { font-size: 14px; }
 .learn-row .book-h { font-size: 16px; }
+/* Главная влезает в экран: клетки умеренные, ряды плотнее */
+.learn-row .g-row { min-height: 25px; }
+.learn-row .cell { width: 21px; height: 21px; border-radius: 6px; }
+.learn-row .cell.due::after { inset: 6px; }
+.learn-row .cells { gap: 4px; }
+.learn-row .book-card { padding: 12px 18px; }

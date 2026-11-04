@@ -699,6 +699,12 @@ td.cz { border-radius: 0; }
 .learn-row .cells { gap: 5px; }
 .learn-row .g-row .ln, .learn-row .g-row .lp { font-size: 14px; }
 .learn-row .book-h { font-size: 16px; }
+/* Главная влезает в экран: клетки умеренные, ряды плотнее */
+.learn-row .g-row { min-height: 25px; }
+.learn-row .cell { width: 21px; height: 21px; border-radius: 6px; }
+.learn-row .cell.due::after { inset: 6px; }
+.learn-row .cells { gap: 4px; }
+.learn-row .book-card { padding: 12px 18px; }
 </style>
 <div id="app"></div>
 <div id="tip" hidden></div>
@@ -4079,10 +4085,13 @@ const app = document.getElementById('app');
 // Всё содержимое должно войти в экран: если не входит, страница равномерно уменьшается
 function fit() {
   document.querySelectorAll('.fit, .sess-col').forEach(el => {
-    const box = el.parentElement, cs = getComputedStyle(box), room = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
     el.style.zoom = 1;
     if (innerWidth <= 860 || el.closest('.phase-task, .phase-result')) return;
-    for (let z = 1; z >= 0.6 && el.getBoundingClientRect().height > room; z -= 0.04) el.style.zoom = z;
+    // Всё меряем в одних экранных пикселях: место в контейнере и высоту содержимого
+    const box = el.parentElement, cs = getComputedStyle(box), br = box.getBoundingClientRect();
+    const room = br.height * (box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)) / box.clientHeight;
+    const need = el.getBoundingClientRect().height;
+    if (need > room) el.style.zoom = Math.max(0.6, Math.floor(room / need * 100) / 100);
   });
 }
 window.addEventListener('resize', fit);
@@ -4109,7 +4118,7 @@ function render() {
       <div class="brand"><b lang="ja">文法</b><span>Bunpō</span></div>
       <nav class="nav">${navItem('today', 'Сегодня', due + nw || '')}${navItem('sheet', 'Шпаргалка')}${navItem('map', 'Карта форм')}${navItem('settings', 'Настройки')}</nav>
     </aside>
-    <main class="main"><div class="col ${view === 'sheet' ? 'fit' : ''} view-${view}">${body}</div></main>
+    <main class="main"><div class="col ${view === 'map' || view === 'news' ? '' : 'fit'} view-${view}">${body}</div></main>
     <nav class="bottom">${[['today', 'Сегодня'], ['sheet', 'Шпаргалка'], ['map', 'Карта'], ['settings', 'Ещё']].map(([v, l]) => `<button class="${view === v ? 'on' : ''}" data-go="${v}">${l}</button>`).join('')}</nav>
   </div>`;
   fit();
@@ -4139,8 +4148,7 @@ function viewToday() {
   const sub = due.length + nw.length ? `≈ ${mins} мин · сделано ${doneTotal} из ${planTotal}` : tomorrowPlan();
   const plan = `<section class="plan"><div class="plan-t"><div class="eyebrow">${WEEK[d.getDay()]}, ${d.getDate()} ${MONTHS_FULL[d.getMonth()]} · день ${dayNo}</div><h1>${head}</h1><p>${sub}</p></div>
     <div class="plan-btns">${due.length + nw.length ? `<button class="btn" data-act="start">${doneTotal ? 'Продолжить' : 'Начать'}</button>` : ''}${learned ? '<button class="btn btn-2" data-act="drill" title="Случайные вопросы по всем пройденным темам. Ошибка снижает процент темы.">Дрочка</button>' : ''}</div></section>`;
-  return `<div class="bento"><div class="b-left">${plan}${statTiles(now, learned, left, finish, todayLog)}</div>${memoryRing(now)}</div><div class="learn-row"><div class="books">${BOOKS.map(b => bookCard(b, now)).join('')}</div>${learnPanel(now)}</div>
-    <div class="charts">${learned ? forecastChart() : ''}</div>`;
+  return `<div class="bento"><div class="b-left">${plan}${statTiles(now, learned, left, finish, todayLog)}</div>${memoryRing(now)}</div><div class="learn-row"><div class="books">${BOOKS.map(b => bookCard(b, now)).join('')}</div>${learnPanel(now)}</div>`;
 }
 let learnType = null;
 function learnPanel(now) {
