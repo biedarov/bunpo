@@ -251,7 +251,7 @@ function sentFrom(q, n) {
 }
 TOPICS.forEach(t => { t.sq = [...t.bq, ...(t.q || [])].map(sentFrom).filter(Boolean); });
 
-// Ошибка в режиме «дрочка»: стабильность падает, процент темы сразу ниже, повтор ближе
+// Ошибка в режиме «Блиц»: стабильность падает, процент темы сразу ниже, повтор ближе
 function penalize(card, now = Date.now()) {
   if (!card) return null;
   const before = memoryOf(card, now);

@@ -150,12 +150,38 @@ window.addEventListener('resize', fit);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 // На широком мониторе всё увеличивается, чтобы читалось с обычного расстояния
 function scaleUi() {
-  const w = window.innerWidth, z = w >= 2200 ? 1.45 : w >= 1700 ? 1.3 : w >= 1400 ? 1.15 : 1;
+  const w = window.innerWidth, z = w >= 2300 ? 1.25 : w >= 1700 ? 1.1 : 1;
   document.documentElement.style.zoom = z;
   document.documentElement.style.setProperty('--vw', (w / z) + 'px');
   document.documentElement.style.setProperty('--vh', (window.innerHeight / z) + 'px');
 }
 scaleUi(); window.addEventListener('resize', scaleUi);
+const isPhone = () => window.innerWidth <= 860;
+function pinToVisible() {
+  const vv = window.visualViewport, el = document.getElementById('app');
+  if (!vv || !el) return;
+  if (!isPhone()) { el.style.height = ''; el.style.transform = ''; return; }
+  el.style.height = vv.height + 'px';
+  el.style.transform = vv.offsetTop ? 'translateY(' + vv.offsetTop + 'px)' : '';
+  document.documentElement.classList.toggle('kb', window.innerHeight - vv.height > 120);
+}
+if (window.visualViewport) { visualViewport.addEventListener('resize', pinToVisible); visualViewport.addEventListener('scroll', pinToVisible); }
+window.addEventListener('resize', pinToVisible);
+// Когда печатаешь ответ, карточка с вопросом встаёт к верху экрана
+document.addEventListener('focusin', e => {
+  if (e.target.id !== 'answer' || !isPhone()) return;
+  setTimeout(() => { pinToVisible(); keepAskVisible(); }, 280);
+});
+// Вопрос сверху; если вся карточка не влезает над клавиатурой — так, чтобы поле ответа было видно над кнопками
+function keepAskVisible() {
+  const body = document.querySelector('.sess-body'), card = document.querySelector('.qz-card'), inp = document.getElementById('answer'), foot = document.querySelector('.sess-col > .foot');
+  if (!body || !card || !inp || !isPhone()) return;
+  const top0 = body.getBoundingClientRect().top - body.scrollTop;
+  const cardTop = card.getBoundingClientRect().top - top0, inpBottom = inp.getBoundingClientRect().bottom - top0;
+  const room = body.clientHeight - (foot ? foot.offsetHeight : 0);
+  body.scrollTop = inpBottom - cardTop + 8 <= room ? cardTop - 8 : inpBottom - room + 6;
+}
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (document.activeElement && document.activeElement.id === 'answer') setTimeout(keepAskVisible, 60); });
 function render() {
   document.body.classList.toggle('no-furi', !st.furigana);
   if (st.theme === 'auto') document.documentElement.removeAttribute('data-theme');
@@ -199,7 +225,7 @@ function viewToday() {
   const finish = left ? today + Math.ceil(after / st.perDay) : null;
   const sub = due.length + nw.length ? `≈ ${mins} мин · сделано ${doneTotal} из ${planTotal}` : tomorrowPlan();
   const plan = `<section class="plan"><div class="plan-t"><div class="eyebrow">${WEEK[d.getDay()]}, ${d.getDate()} ${MONTHS_FULL[d.getMonth()]} · день ${dayNo}</div><h1>${head}</h1><p>${sub}</p></div>
-    <div class="plan-btns">${due.length + nw.length ? `<button class="btn" data-act="start">${doneTotal ? 'Продолжить' : 'Начать'}</button>` : ''}${learned ? '<button class="btn btn-2" data-act="drill" title="Случайные вопросы по всем пройденным темам. Ошибка снижает процент темы.">Дрочка</button>' : ''}</div></section>`;
+    <div class="plan-btns">${due.length + nw.length ? `<button class="btn" data-act="start">${doneTotal ? 'Продолжить' : 'Начать'}</button>` : ''}${learned ? '<button class="btn btn-2" data-act="drill" title="Случайные вопросы по всем пройденным темам. Ошибка снижает процент темы.">Блиц</button>' : ''}</div></section>`;
   return `<div class="bento"><div class="b-left">${plan}${statTiles(now, learned, left, finish, todayLog)}</div>${memoryRing(now)}</div><div class="learn-row"><div class="books">${BOOKS.map(b => bookCard(b, now)).join('')}</div>${learnPanel(now)}</div>`;
 }
 let learnType = null;
@@ -344,7 +370,7 @@ function viewSheet() {
   };
   const cols = SHEET.map((g, gi) => `<section class="sh-group"><h2>${g.h}${g.ex ? ` <span lang="ja">${rich(g.ex)}</span>` : ''}</h2>${g.items.map((it, ii) => item(it, gi + ':' + ii)).join('')}</section>`).join('');
   const total = SHEET.reduce((a, g) => a + g.items.length, 0);
-  return `<header class="sh-head"><div><h1>Вся грамматика на одном экране</h1><p>Пример на 読む и смысл. Клик по японскому — открыть тему.</p></div>
+  return `<header class="sh-head"><div><h1>Вся грамматика на одном экране</h1><p>Пример на 読む и смысл. Нажми на японское — откроется тема.</p></div>
       <div class="row-btns"><button class="btn btn-sm ${sheetHide ? '' : 'btn-2'}" data-act="sheet-hide">${sheetHide ? `Проверка: открыто ${sheetOpen.size} из ${total}` : 'Проверить себя: скрыть значения'}</button>${sheetHide ? '<button class="linkish" data-act="sheet-show">Показать всё</button>' : ''}</div></header>
     <div class="sheet">${cols}</div>
     <div class="sh-long"><b>Это коротко не объяснить, читай целиком:</b>${SHEET_LONG.map(([n, id]) => `<button class="chip" data-topic="${id}">${rich(n)}</button>`).join('')}</div>`;
@@ -375,7 +401,7 @@ function viewMap() {
 let backupText = '', backupMsg = '', resetArm = false;
 function viewSettings() {
   const seg = (key, opts) => `<div class="seg">${opts.map(([v, l]) => `<button class="${String(st[key]) === String(v) ? 'on' : ''}" data-set="${key}" data-val="${v}">${l}</button>`).join('')}</div>`;
-  const syncText = { cloud: syncOn() ? 'Прогресс сохраняется на сервер по коду ' + syncCode + ' и в браузер.' : 'Прогресс сохраняется в твой аккаунт Claude и в браузер.', local: 'Прогресс сохраняется только в этом браузере. Делай резервную копию.', error: 'Облако сейчас недоступно, прогресс сохранён в браузере. Синхронизация повторится сама.' }[cloudStatus];
+  const syncText = { cloud: syncOn() ? 'Прогресс сохраняется на сервер по коду ' + syncCode + ' и в браузер.' : 'Прогресс сохраняется в твой аккаунт Claude и в браузер.', local: 'Прогресс сохраняется только в этом браузере. Чтобы он был на всех устройствах, включи синхронизацию ниже.', error: 'Облако сейчас недоступно, прогресс сохранён в браузере. Синхронизация повторится сама.' }[cloudStatus];
   return `<header class="today-h"><h1>Настройки</h1><p>${esc(syncText)}</p></header>
   <section class="set">
     <div class="set-r"><div>Новых тем в день<span>Уроки 1–12 идут без лимита, дальше по этому числу.</span></div><input class="num" id="perday" type="number" min="0" step="1" inputmode="numeric" value="${st.perDay}" aria-label="Новых тем в день"></div>
@@ -389,7 +415,7 @@ function viewSettings() {
       : `<p>Первое устройство: создай код. На остальных один раз введи этот же код.</p><div class="row-btns"><button class="btn btn-sm" data-act="sync-new">Создать код</button><input class="num sync-in" id="sync-code" placeholder="ABC-123" maxlength="7" autocomplete="off" aria-label="Код синхронизации"><button class="btn btn-2 btn-sm" data-act="sync-use">Ввести код</button></div>`}
     ${syncMsg ? `<p class="empty">${esc(syncMsg)}</p>` : ''}</section>
   <section><div class="sec-h"><h2>Как считается память</h2></div>
-    <ul class="notes"><li>Расписание автоматическое: новые темы и повторы приходят сами, сначала повторы, потом новое.</li><li>После каждой темы идут вопросы. Процент верных с первого раза ставит оценку сам.</li><li>Процент — расчётная вероятность вспомнить тему. Считается по ответам и времени с последнего повтора (формула FSRS-5).</li><li>Повтор назначается на день, когда процент дойдёт примерно до 90%.</li><li>В режиме «Дрочка» каждая ошибка сразу снижает процент темы, и она раньше вернётся на повтор.</li><li>Новый день начинается в 04:00.</li></ul></section>
+    <ul class="notes"><li>Расписание автоматическое: новые темы и повторы приходят сами, сначала повторы, потом новое.</li><li>После каждой темы идут вопросы. Процент верных с первого раза ставит оценку сам.</li><li>Процент — расчётная вероятность вспомнить тему. Считается по ответам и времени с последнего повтора (формула FSRS-5).</li><li>Повтор назначается на день, когда процент дойдёт примерно до 90%.</li><li>В режиме «Блиц» каждая ошибка сразу снижает процент темы, и она раньше вернётся на повтор.</li><li>Новый день начинается в 04:00.</li></ul></section>
   <section><div class="sec-h"><h2>Резервная копия</h2></div>
     <div class="row-btns"><button class="btn btn-2 btn-sm" data-act="export">Показать копию</button><button class="btn btn-2 btn-sm" data-act="copy">Скопировать</button><button class="btn btn-2 btn-sm" data-act="import">Загрузить из поля</button></div>
     <p class="empty" id="backup-msg">${esc(backupMsg)}</p>
@@ -493,7 +519,7 @@ function startPractice(id) {
   UNDO = [];
   startQuiz();
 }
-// Дрочка: случайный вопрос по пройденной теме, слабые темы выпадают чаще. Ошибка — минус процент.
+// Блиц: случайный вопрос по пройденной теме, слабые темы выпадают чаще. Ошибка — минус процент.
 function drillPool() { const ids = Object.keys(st.cards).filter(id => BY_ID[id]); return ids.length ? ids : TOPICS.filter(t => t.lesson <= 2).map(t => t.id); }
 function drillNext() {
   const ids = drillPool(), now = Date.now();
@@ -550,9 +576,9 @@ function focusInput() { const el = document.getElementById('answer'); if (el) se
 function renderSession() {
   if (S.phase === 'done') { renderSummary(); return; }
   const total = S.queue.length, it = S.item, t = S.topic;
-  const modeName = { drill: 'Дрочка', new: 'Новая тема', review: 'Повторение', relearn: 'Ещё раз', practice: 'Тренировка, на память не влияет' }[it.mode];
+  const modeName = { drill: 'Блиц', new: 'Новая тема', review: 'Повторение', relearn: 'Ещё раз', practice: 'Тренировка, на память не влияет' }[it.mode];
   const inQuiz = S.phase === 'task', n = inQuiz ? S.qs.length : 0;
-  const counter = S.drill ? `Дрочка · верно <b>${S.ok}</b> из ${S.ok + S.bad}` : (S.practice ? '' : `Тема <b>${S.i + 1}</b> из ${total} · `) + (inQuiz ? `вопрос <b>${S.t + 1}</b> из ${n}${S.qs[S.t].retry ? ' · ещё раз' : ''}` : modeName);
+  const counter = S.drill ? `Блиц · верно <b>${S.ok}</b> из ${S.ok + S.bad}` : (S.practice ? '' : `Тема <b>${S.i + 1}</b> из ${total} · `) + (inQuiz ? `вопрос <b>${S.t + 1}</b> из ${n}${S.qs[S.t].retry ? ' · ещё раз' : ''}` : modeName);
   const share = S.drill ? (S.ok + S.bad ? S.ok / (S.ok + S.bad) : 0) : S.practice ? S.t / Math.max(1, n) : (S.i + (inQuiz ? S.t / n * 0.9 : S.phase === 'result' ? 0.95 : 0)) / total;
   const top = `<div class="sess-top"><div class="sess-r"><span>${counter}</span><button class="linkish undo" data-act="undo" ${UNDO.length ? '' : 'disabled'} title="Ctrl+Z">↶ Отменить</button><button class="linkish" data-act="exit">Выйти</button></div><div class="lbar"><i style="width:${share * 100}%"></i></div></div>`;
   const flash = S.flash && S.phase !== 'result' ? `<div class="flash">${S.flash}</div>` : '';
@@ -562,10 +588,10 @@ function renderSession() {
   if (S.phase === 'read') {
     body = flash + cardOf();
     const nq = Math.min(QN_NEW, (t.bq || []).length + (t.q || []).length);
-    foot = `<div class="foot"><div class="foot-in"><small>Дальше ${nq} ${pl(nq, 'вопрос', 'вопроса', 'вопросов')}. Процент верных с первого раза станет памятью темы.</small><button class="btn" data-act="to-quiz">К вопросам · Enter</button></div></div>`;
+    foot = `<div class="foot"><div class="foot-in"><small>Дальше ${nq} ${pl(nq, 'вопрос', 'вопроса', 'вопросов')}. Процент верных с первого раза станет памятью темы.</small><button class="btn" data-act="to-quiz">К вопросам<span class="kh"> · Enter</span></button></div></div>`;
   } else if (S.phase === 'result') {
     body = resultHtml();
-    foot = `<div class="foot"><div class="foot-in"><small>Не тот клик? «Отменить» вернёт последний ответ.</small><button class="btn" data-act="commit">Дальше · Enter</button></div></div>`;
+    foot = `<div class="foot"><div class="foot-in"><small>Не тот клик? «Отменить» вернёт последний ответ.</small><button class="btn" data-act="commit">Дальше<span class="kh"> · Enter</span></button></div></div>`;
   } else {
     body = flash + (S.showCard ? `<div class="peek">${cardOf()}</div>` : '') + taskHtml();
     foot = taskFoot();
@@ -582,7 +608,7 @@ function resultHtml() {
   const miss = S.miss.map(i => S.qs[i].q);
   return `<section class="result g${g}"><div class="q-tag"><span>${rich(t.t)}</span></div>
     <div class="res-top"><div class="res-pct"><b>${pct(sc)}</b><small>%</small></div><div><h2>${word}</h2><p>${S.ok} из ${n} верно с первого раза${S.peek ? ', подсматривал тему' : ''}. Следующий повтор: <b>${next}</b>.</p></div></div>
-    ${miss.length ? `<h3>Где ошибся</h3><ul class="res-miss">${miss.map(q => `<li>${qHtml(q.q)}<div class="ja" lang="ja">${rich(rightAnswer(q))}</div><small>${rich(q.w)}</small></li>`).join('')}</ul>` : '<p class="res-clean">Без единой ошибки.</p>'}
+    ${miss.length ? `<h3>Где ошибся</h3><ul class="res-miss">${miss.map(q => `<li>${qHtml(q.q)}<div class="ja" lang="ja">${rich(rightAnswer(q))}</div>${q.w ? `<small>${rich(q.w)}</small>` : ""}</li>`).join('')}</ul>` : '<p class="res-clean">Без единой ошибки.</p>'}
   </section>`;
 }
 // Условие из таблицы учебника идёт до <br>, сам вопрос — после
@@ -639,7 +665,7 @@ function taskHtml() {
     }).join('')}</div>`;
   } else if (q.k === 'i') {
     const cls = a ? (a.ok ? 'ok' : 'no') : '';
-    w = `<div class="field ${q.full ? "long" : ""}"><input id="answer" class="${cls}" lang="ja" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ответ" value="${esc(S.typed)}" ${a ? 'readonly' : ''} aria-label="Ответ"></div>`;
+    w = `<div class="field ${q.full ? "long" : ""}"><input id="answer" class="${cls}" lang="ja" enterkeyhint="go" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ответ" value="${esc(S.typed)}" ${a ? 'readonly' : ''} aria-label="Ответ"></div>`;
   } else {
     const ansCls = a ? (a.ok ? 'ok' : 'no') : '';
     w = `<div class="tiles-ans ${ansCls}">${S.picked.map(id => { const x = S.pool.find(p => p.id === id); return `<button class="tile" ${a ? 'disabled' : ''} data-unpick="${id}">${rich(x.text)}</button>`; }).join('') || '<span class="tiles-ph">сюда встанут плитки</span>'}</div>
@@ -653,9 +679,9 @@ function taskHtml() {
 const rightAnswer = q => q.show || (q.k === 'c' ? q.o[0] : q.k === 'i' ? q.a[0] : q.t.join(' '));
 function taskFoot() {
   const q = S.q, a = S.answered;
-  if (a) return `<div class="foot"><div class="foot-in"><small>Enter</small><button class="btn" data-act="next">Дальше</button></div></div>`;
+  if (a) return `<div class="foot"><div class="foot-in"><small class="kh">Enter</small><button class="btn" data-act="next">Дальше</button></div></div>`;
   const left = `<span class="row-btns"><button class="linkish" data-act="dunno">Не знаю</button>${S.practice ? '' : `<button class="linkish" data-act="peek">${S.showCard ? 'Скрыть тему' : 'Подсмотреть тему'}</button>`}</span>`;
-  if (q.k === 'c') return `<div class="foot"><div class="foot-in">${left}<small>Клавиши 1–${S.opts.length}</small></div></div>`;
+  if (q.k === 'c') return `<div class="foot"><div class="foot-in">${left}<small class="kh">Клавиши 1–${S.opts.length}</small></div></div>`;
   if (q.k === 'i') return `<div class="foot"><div class="foot-in">${left}<button class="btn" data-act="check-input">Проверить</button></div></div>`;
   return `<div class="foot"><div class="foot-in">${left}<button class="btn" data-act="check-tiles" ${S.picked.length ? '' : 'disabled'}>Проверить</button></div></div>`;
 }
@@ -687,7 +713,9 @@ function showTip(html, x, y) {
   t.style.left = Math.max(8, Math.min(innerWidth - r.width - 8, x + 12)) / z + 'px';
   t.style.top = Math.max(8, y - r.height - 10) / z + 'px';
 }
+const canHover = window.matchMedia('(hover: hover)').matches;
 document.addEventListener('mousemove', e => {
+  if (!canHover) return;
   const el = e.target.closest && e.target.closest('[data-tip]');
   if (el) { showTip(el.dataset.tip, e.clientX, e.clientY); return; }
   hideTip();

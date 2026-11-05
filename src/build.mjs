@@ -23,6 +23,6 @@ ${js}
 `;
 fs.writeFileSync(root + '../bunpo.html', html);
 // Отдельная обёртка, чтобы файл открывался двойным щелчком без публикации
-const standalone = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>\n${html}</body></html>`;
+const standalone = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#09090c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bunpō"><meta name="format-detection" content="telephone=no"></head><body>\n${html}</body></html>`;
 fs.writeFileSync(root + '../bunpo-local.html', standalone);
 console.log('bunpo.html', (html.length / 1024).toFixed(0) + ' KB');

@@ -1,4 +1,4 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#09090c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bunpō"><meta name="format-detection" content="telephone=no"></head><body>
 <title>Bunpō N5–N4</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -846,6 +846,177 @@ td.cz { border-radius: 0; }
 /* Длинная форма занимает две колонки, пустоты заполняют короткие */
 .view-map .forms { grid-auto-flow: row dense; }
 .view-map .form.wide { grid-column: span 2; }
+
+
+/* ═══ Телефон (iPhone и подобные): плотнее, крупные зоны нажатия, ничего не вылезает ═══ */
+@media (max-width: 600px), (max-width: 960px) and (max-height: 500px) {
+  html, body { -webkit-text-size-adjust: 100%; }
+  body { overscroll-behavior: none; }
+  #app { will-change: transform; }
+  button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+  /* Каркас */
+  .main { padding: calc(12px + env(safe-area-inset-top, 0px)) 14px 16px; }
+  .col, .view-today { gap: 10px; }
+  .shell { padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+  .bottom { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)); background: rgba(14, 14, 18, .86); -webkit-backdrop-filter: blur(20px) saturate(1.4); backdrop-filter: blur(20px) saturate(1.4); }
+  .bottom button { min-height: 44px; padding: 0 2px; font-size: 12.5px; white-space: nowrap; border-radius: 12px; }
+
+  /* Главная */
+  .bento, .learn-row, .learn-row .books, .books { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .b-left { gap: 10px; }
+  .plan { flex-direction: column; align-items: stretch; gap: 12px; padding: 14px 16px; border-radius: 18px; }
+  .plan .eyebrow { font-size: 11.5px; }
+  .plan h1 { font-size: 21px; line-height: 1.25; }
+  .plan p { font-size: 13px; }
+  .plan-btns { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; justify-content: stretch; }
+  .plan-btns .btn, .plan .btn { width: 100%; height: 46px; padding: 0 10px; font-size: 15px; }
+  .plan-btns .btn:only-child { grid-column: 1 / -1; }
+  .tiles-s { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .tile-new { grid-column: auto; }
+  .tile-s { padding: 10px 10px; border-radius: 14px; gap: 2px; }
+  .tile-s b { font-size: 20px; }
+  .tile-s span { font-size: 11px; line-height: 1.25; white-space: nowrap; }
+  .tile-s small { display: none; }
+  .ring-card { padding: 12px 16px; gap: 16px; border-radius: 18px; justify-content: flex-start; }
+  .ring { --size: 86px; }
+  .ring::before { inset: 8px; }
+  .ring b { font-size: 25px; }
+  .ring span { font-size: 10px; }
+  .ring-card dl { gap: 5px; }
+  .ring-card dt, .ring-card dd { font-size: 13px; }
+  .book-card { padding: 12px 14px; border-radius: 18px; }
+  .book-h h2 { font-size: 15px; }
+  .book-h span { font-size: 11.5px; }
+  .book-bar { margin: 8px 0 8px; }
+  .learn-row .book-rows { gap: 2px; }
+  .learn-row .g-row { grid-template-columns: 18px minmax(0, 1fr) auto; grid-template-areas: "ln name lp" ". cells cells"; gap: 5px 6px; min-height: 0; padding: 6px 0 7px; border-top: 1px solid rgba(255,255,255,.05); }
+  .learn-row .g-row:first-child { border-top: 0; }
+  .learn-row .g-row .ln { grid-area: ln; } .learn-row .g-row .lname { grid-area: name; } .learn-row .g-row .lp { grid-area: lp; text-align: right; }
+  .learn-row .g-row .cells { grid-area: cells; justify-content: flex-start; }
+  .learn-row .lname { font-size: 13px; color: var(--ink-2, inherit); }
+  .learn-row .cells { gap: 5px; }
+  .learn-row .cell { width: 26px; height: 22px; border-radius: 6px; }
+  .learn-row .cell.due::after { inset: 6px 8px; }
+  .learn-row .g-row .ln, .learn-row .g-row .lp { font-size: 11.5px; }
+  .ltypes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; padding: 12px; border-radius: 18px; }
+  .ltypes .sec-h, .ltype-hint, .ltype-how { grid-column: 1 / -1; }
+  .ltype { min-height: 46px; padding: 6px 10px; background: var(--sunk); border-radius: 12px; }
+  .ltype span { font-size: 13px; }
+
+  /* Тема */
+  .t-bar { position: sticky; top: calc(-12px - env(safe-area-inset-top, 0px)); z-index: 3; margin: -12px -14px 0; padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 8px; background: linear-gradient(var(--bg) 70%, transparent); }
+  .arrow { width: 40px; height: 40px; }
+  .back { min-height: 40px; display: inline-flex; align-items: center; }
+  .view-topic .t-title { font-size: 24px; }
+  .view-topic .t-gist { font-size: 15px; }
+  .view-topic .rule { font-size: 16px; }
+  .blk, .rule { padding: 12px 14px; }
+  .tbl-w { margin: 0 -4px; -webkit-overflow-scrolling: touch; }
+  .view-topic td { font-size: 13.5px; }
+  .view-topic td .ja { font-size: 15px; }
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .c2 .row-btns { display: grid; grid-template-columns: 1fr 1fr; }
+  .c2 .row-btns .btn { width: 100%; height: 44px; }
+
+  /* Карта форм */
+  .view-map .map-bar { position: sticky; top: calc(-12px - env(safe-area-inset-top, 0px)); z-index: 3; }
+  .view-map .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -4px; padding: 0 4px 2px; }
+  .view-map .tabs::-webkit-scrollbar { display: none; }
+  .view-map .tab { flex: none; font-size: 16px; padding: 2px 12px; }
+  .view-map .legend { font-size: 11px; gap: 4px 10px; }
+  .view-map .forms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .view-map .form.wide { grid-column: 1 / -1; }
+  .view-map .form { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "j j" "r p"; align-items: baseline; padding: 8px 12px 9px; gap: 1px 8px; }
+  .view-map .form .j { grid-area: j; text-overflow: clip; }
+  .view-map .form .r { grid-area: r; }
+  .view-map .form .p { grid-area: p; align-self: baseline; }
+  .view-map .base { padding: 12px; }
+  .view-map .base-w { font-size: 12.5px; }
+
+  /* Шпаргалка и настройки */
+  .sheet { columns: 1; }
+  .sh-head h1 { font-size: 23px; line-height: 1.2; }
+  .sh-head p { font-size: 13px; }
+  .today-h h1 { font-size: 24px; }
+  .today-h p { font-size: 13.5px; }
+  .sh-jp { font-size: 15px; }
+  .sh-ru { font-size: 12.5px; }
+  .sh-head .row-btns { width: 100%; }
+  .set-r { padding: 12px 0; }
+  .seg button { min-height: 36px; }
+  .sync .row-btns { display: grid; grid-template-columns: 1fr 1fr; }
+  .sync .row-btns .sync-in { grid-column: 1 / -1; width: 100%; height: 44px; font-size: 17px; text-align: center; }
+  .sync .row-btns .btn { width: 100%; height: 44px; }
+  .num { font-size: 16px; height: 40px; }
+  .backup { font-size: 16px; }
+
+  /* Занятие */
+  .sess-r { padding: calc(8px + env(safe-area-inset-top, 0px)) 14px 6px; font-size: 13px; gap: 12px; }
+  .sess-r > span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sess-r .linkish { min-height: 36px; display: inline-flex; align-items: center; }
+  .lbar { margin: 0 14px; }
+  .sess-body { padding: 10px 14px 0; }
+  .phase-task .sess-body, .phase-result .sess-body { display: block; }
+  .phase-task .sess-col, .phase-result .sess-col { margin: 0 auto; padding: 2px 0 0; max-width: none; }
+  .quiz { gap: 8px; }
+  .qz-meta { font-size: 12px; }
+  .qz-card { padding: 16px; gap: 12px; border-radius: 18px; }
+  .qz-situ { font-size: 15px; }
+  .qz-lab, .qz-how, .qz-help > span { font-size: 12px; }
+  .qz-ask { font-size: 17px; }
+  .qz-ask.jp { font-size: 23px; line-height: 1.8; text-wrap: balance; }
+  .qz-small { font-size: 18px; }
+  .qz-task { font-size: 14px; padding: 8px 11px; }
+  .qz-ctx { font-size: 13.5px; padding: 8px 12px; line-height: 1.4; }
+  .ctx-row { grid-template-columns: minmax(60px, max-content) minmax(0, 1fr); gap: 0 10px; padding: 3px 0; }
+  .ctx-row.one { grid-template-columns: minmax(0, 1fr); }
+  .kb .qz-ctx { font-size: 12.5px; padding: 5px 10px; line-height: 1.3; }
+  .kb .ctx-row { padding: 1px 0; }
+  .qz-help { gap: 6px; }
+  .qz-help i { font-size: 17px; padding: 0 10px; }
+  /* 16px и больше: iOS не увеличивает страницу при вводе */
+  .quiz .field input, .quiz .field.long input { font-size: 17px; padding: 12px 14px; border-radius: 14px; }
+  .quiz .opt { grid-template-columns: minmax(0, 1fr); font-size: 18px; padding: 10px 14px; min-height: 50px; border-radius: 14px; }
+  .quiz .opt kbd { display: none; }
+  .quiz .tile { font-size: 17px; padding: 6px 12px; min-height: 44px; }
+  .quiz .fb { font-size: 13.5px; padding: 10px 12px; }
+  .quiz .fb .right { font-size: 18px; }
+  /* Кнопки всегда видны внизу, даже когда открыта клавиатура */
+  .sess-col > .foot { position: sticky; bottom: 0; z-index: 2; margin: 0 -14px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(transparent, var(--bg) 28%); }
+  .sess-col > .foot .foot-in { flex-wrap: nowrap; }
+  .sess-col > .foot .btn { height: 48px; padding: 0 28px; font-size: 16px; }
+  .sess-col > .foot .linkish { font-size: 14px; min-height: 40px; display: inline-flex; align-items: center; }
+  .kb .sess-col > .foot { padding-bottom: 10px; }
+  /* Пока печатаешь — убрать второстепенное, чтобы вопрос и ответ помещались над клавиатурой */
+  .kb .qz-meta, .kb .qz-how, .kb .qz-lab, .kb .flash, .kb .lbar { display: none; }
+  .kb .qz-help > span { display: none; }
+  .kb .qz-card { padding: 12px 14px; gap: 9px; }
+  .kb .qz-ask.jp { font-size: 20px; line-height: 1.75; }
+  .kb .qz-task { padding: 6px 10px; font-size: 13.5px; }
+  .kb .qz-help i { font-size: 15px; min-height: 34px; padding: 0 9px; }
+  .kb .quiz .field input { padding: 10px 12px; }
+  .kb .sess-r { padding-top: 6px; padding-bottom: 4px; }
+  .kb .sess-body { padding-top: 6px; }
+  .kb .sess-col > .foot { padding-top: 6px; padding-bottom: 6px; }
+  .kb .sess-col > .foot .btn { height: 40px; }
+  .kh { display: none; }
+  .foot-in > .btn:last-child { margin-left: auto; }
+  .kb .bottom { display: none; }
+  .result { padding: 16px; border-radius: 18px; }
+  .res-pct { font-size: 44px; }
+  .summary { padding-top: 4vh; }
+  .peek { padding: 8px; }
+}
+
+/* ПК: блок уроков занимает всю оставшуюся высоту, строки распределяются равномерно — без пустого низа */
+@media (min-width: 861px) {
+  .view-today { grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
+  .view-today .learn-row .book-card { display: flex; flex-direction: column; }
+  .view-today .learn-row .book-rows { flex: 1; display: grid; grid-auto-rows: minmax(0, 1fr); align-content: stretch; }
+  .view-today .ltypes { align-content: start; }
+}
+@media (max-width: 860px) { .bottom { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 </style>
 <div id="app"></div>
 <div id="tip" hidden></div>
@@ -3885,7 +4056,7 @@ function sentFrom(q, n) {
 }
 TOPICS.forEach(t => { t.sq = [...t.bq, ...(t.q || [])].map(sentFrom).filter(Boolean); });
 
-// Ошибка в режиме «дрочка»: стабильность падает, процент темы сразу ниже, повтор ближе
+// Ошибка в режиме «Блиц»: стабильность падает, процент темы сразу ниже, повтор ближе
 function penalize(card, now = Date.now()) {
   if (!card) return null;
   const before = memoryOf(card, now);
@@ -4239,12 +4410,38 @@ window.addEventListener('resize', fit);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
 // На широком мониторе всё увеличивается, чтобы читалось с обычного расстояния
 function scaleUi() {
-  const w = window.innerWidth, z = w >= 2200 ? 1.45 : w >= 1700 ? 1.3 : w >= 1400 ? 1.15 : 1;
+  const w = window.innerWidth, z = w >= 2300 ? 1.25 : w >= 1700 ? 1.1 : 1;
   document.documentElement.style.zoom = z;
   document.documentElement.style.setProperty('--vw', (w / z) + 'px');
   document.documentElement.style.setProperty('--vh', (window.innerHeight / z) + 'px');
 }
 scaleUi(); window.addEventListener('resize', scaleUi);
+const isPhone = () => window.innerWidth <= 860;
+function pinToVisible() {
+  const vv = window.visualViewport, el = document.getElementById('app');
+  if (!vv || !el) return;
+  if (!isPhone()) { el.style.height = ''; el.style.transform = ''; return; }
+  el.style.height = vv.height + 'px';
+  el.style.transform = vv.offsetTop ? 'translateY(' + vv.offsetTop + 'px)' : '';
+  document.documentElement.classList.toggle('kb', window.innerHeight - vv.height > 120);
+}
+if (window.visualViewport) { visualViewport.addEventListener('resize', pinToVisible); visualViewport.addEventListener('scroll', pinToVisible); }
+window.addEventListener('resize', pinToVisible);
+// Когда печатаешь ответ, карточка с вопросом встаёт к верху экрана
+document.addEventListener('focusin', e => {
+  if (e.target.id !== 'answer' || !isPhone()) return;
+  setTimeout(() => { pinToVisible(); keepAskVisible(); }, 280);
+});
+// Вопрос сверху; если вся карточка не влезает над клавиатурой — так, чтобы поле ответа было видно над кнопками
+function keepAskVisible() {
+  const body = document.querySelector('.sess-body'), card = document.querySelector('.qz-card'), inp = document.getElementById('answer'), foot = document.querySelector('.sess-col > .foot');
+  if (!body || !card || !inp || !isPhone()) return;
+  const top0 = body.getBoundingClientRect().top - body.scrollTop;
+  const cardTop = card.getBoundingClientRect().top - top0, inpBottom = inp.getBoundingClientRect().bottom - top0;
+  const room = body.clientHeight - (foot ? foot.offsetHeight : 0);
+  body.scrollTop = inpBottom - cardTop + 8 <= room ? cardTop - 8 : inpBottom - room + 6;
+}
+if (window.visualViewport) visualViewport.addEventListener('resize', () => { if (document.activeElement && document.activeElement.id === 'answer') setTimeout(keepAskVisible, 60); });
 function render() {
   document.body.classList.toggle('no-furi', !st.furigana);
   if (st.theme === 'auto') document.documentElement.removeAttribute('data-theme');
@@ -4288,7 +4485,7 @@ function viewToday() {
   const finish = left ? today + Math.ceil(after / st.perDay) : null;
   const sub = due.length + nw.length ? `≈ ${mins} мин · сделано ${doneTotal} из ${planTotal}` : tomorrowPlan();
   const plan = `<section class="plan"><div class="plan-t"><div class="eyebrow">${WEEK[d.getDay()]}, ${d.getDate()} ${MONTHS_FULL[d.getMonth()]} · день ${dayNo}</div><h1>${head}</h1><p>${sub}</p></div>
-    <div class="plan-btns">${due.length + nw.length ? `<button class="btn" data-act="start">${doneTotal ? 'Продолжить' : 'Начать'}</button>` : ''}${learned ? '<button class="btn btn-2" data-act="drill" title="Случайные вопросы по всем пройденным темам. Ошибка снижает процент темы.">Дрочка</button>' : ''}</div></section>`;
+    <div class="plan-btns">${due.length + nw.length ? `<button class="btn" data-act="start">${doneTotal ? 'Продолжить' : 'Начать'}</button>` : ''}${learned ? '<button class="btn btn-2" data-act="drill" title="Случайные вопросы по всем пройденным темам. Ошибка снижает процент темы.">Блиц</button>' : ''}</div></section>`;
   return `<div class="bento"><div class="b-left">${plan}${statTiles(now, learned, left, finish, todayLog)}</div>${memoryRing(now)}</div><div class="learn-row"><div class="books">${BOOKS.map(b => bookCard(b, now)).join('')}</div>${learnPanel(now)}</div>`;
 }
 let learnType = null;
@@ -4433,7 +4630,7 @@ function viewSheet() {
   };
   const cols = SHEET.map((g, gi) => `<section class="sh-group"><h2>${g.h}${g.ex ? ` <span lang="ja">${rich(g.ex)}</span>` : ''}</h2>${g.items.map((it, ii) => item(it, gi + ':' + ii)).join('')}</section>`).join('');
   const total = SHEET.reduce((a, g) => a + g.items.length, 0);
-  return `<header class="sh-head"><div><h1>Вся грамматика на одном экране</h1><p>Пример на 読む и смысл. Клик по японскому — открыть тему.</p></div>
+  return `<header class="sh-head"><div><h1>Вся грамматика на одном экране</h1><p>Пример на 読む и смысл. Нажми на японское — откроется тема.</p></div>
       <div class="row-btns"><button class="btn btn-sm ${sheetHide ? '' : 'btn-2'}" data-act="sheet-hide">${sheetHide ? `Проверка: открыто ${sheetOpen.size} из ${total}` : 'Проверить себя: скрыть значения'}</button>${sheetHide ? '<button class="linkish" data-act="sheet-show">Показать всё</button>' : ''}</div></header>
     <div class="sheet">${cols}</div>
     <div class="sh-long"><b>Это коротко не объяснить, читай целиком:</b>${SHEET_LONG.map(([n, id]) => `<button class="chip" data-topic="${id}">${rich(n)}</button>`).join('')}</div>`;
@@ -4464,7 +4661,7 @@ function viewMap() {
 let backupText = '', backupMsg = '', resetArm = false;
 function viewSettings() {
   const seg = (key, opts) => `<div class="seg">${opts.map(([v, l]) => `<button class="${String(st[key]) === String(v) ? 'on' : ''}" data-set="${key}" data-val="${v}">${l}</button>`).join('')}</div>`;
-  const syncText = { cloud: syncOn() ? 'Прогресс сохраняется на сервер по коду ' + syncCode + ' и в браузер.' : 'Прогресс сохраняется в твой аккаунт Claude и в браузер.', local: 'Прогресс сохраняется только в этом браузере. Делай резервную копию.', error: 'Облако сейчас недоступно, прогресс сохранён в браузере. Синхронизация повторится сама.' }[cloudStatus];
+  const syncText = { cloud: syncOn() ? 'Прогресс сохраняется на сервер по коду ' + syncCode + ' и в браузер.' : 'Прогресс сохраняется в твой аккаунт Claude и в браузер.', local: 'Прогресс сохраняется только в этом браузере. Чтобы он был на всех устройствах, включи синхронизацию ниже.', error: 'Облако сейчас недоступно, прогресс сохранён в браузере. Синхронизация повторится сама.' }[cloudStatus];
   return `<header class="today-h"><h1>Настройки</h1><p>${esc(syncText)}</p></header>
   <section class="set">
     <div class="set-r"><div>Новых тем в день<span>Уроки 1–12 идут без лимита, дальше по этому числу.</span></div><input class="num" id="perday" type="number" min="0" step="1" inputmode="numeric" value="${st.perDay}" aria-label="Новых тем в день"></div>
@@ -4478,7 +4675,7 @@ function viewSettings() {
       : `<p>Первое устройство: создай код. На остальных один раз введи этот же код.</p><div class="row-btns"><button class="btn btn-sm" data-act="sync-new">Создать код</button><input class="num sync-in" id="sync-code" placeholder="ABC-123" maxlength="7" autocomplete="off" aria-label="Код синхронизации"><button class="btn btn-2 btn-sm" data-act="sync-use">Ввести код</button></div>`}
     ${syncMsg ? `<p class="empty">${esc(syncMsg)}</p>` : ''}</section>
   <section><div class="sec-h"><h2>Как считается память</h2></div>
-    <ul class="notes"><li>Расписание автоматическое: новые темы и повторы приходят сами, сначала повторы, потом новое.</li><li>После каждой темы идут вопросы. Процент верных с первого раза ставит оценку сам.</li><li>Процент — расчётная вероятность вспомнить тему. Считается по ответам и времени с последнего повтора (формула FSRS-5).</li><li>Повтор назначается на день, когда процент дойдёт примерно до 90%.</li><li>В режиме «Дрочка» каждая ошибка сразу снижает процент темы, и она раньше вернётся на повтор.</li><li>Новый день начинается в 04:00.</li></ul></section>
+    <ul class="notes"><li>Расписание автоматическое: новые темы и повторы приходят сами, сначала повторы, потом новое.</li><li>После каждой темы идут вопросы. Процент верных с первого раза ставит оценку сам.</li><li>Процент — расчётная вероятность вспомнить тему. Считается по ответам и времени с последнего повтора (формула FSRS-5).</li><li>Повтор назначается на день, когда процент дойдёт примерно до 90%.</li><li>В режиме «Блиц» каждая ошибка сразу снижает процент темы, и она раньше вернётся на повтор.</li><li>Новый день начинается в 04:00.</li></ul></section>
   <section><div class="sec-h"><h2>Резервная копия</h2></div>
     <div class="row-btns"><button class="btn btn-2 btn-sm" data-act="export">Показать копию</button><button class="btn btn-2 btn-sm" data-act="copy">Скопировать</button><button class="btn btn-2 btn-sm" data-act="import">Загрузить из поля</button></div>
     <p class="empty" id="backup-msg">${esc(backupMsg)}</p>
@@ -4582,7 +4779,7 @@ function startPractice(id) {
   UNDO = [];
   startQuiz();
 }
-// Дрочка: случайный вопрос по пройденной теме, слабые темы выпадают чаще. Ошибка — минус процент.
+// Блиц: случайный вопрос по пройденной теме, слабые темы выпадают чаще. Ошибка — минус процент.
 function drillPool() { const ids = Object.keys(st.cards).filter(id => BY_ID[id]); return ids.length ? ids : TOPICS.filter(t => t.lesson <= 2).map(t => t.id); }
 function drillNext() {
   const ids = drillPool(), now = Date.now();
@@ -4639,9 +4836,9 @@ function focusInput() { const el = document.getElementById('answer'); if (el) se
 function renderSession() {
   if (S.phase === 'done') { renderSummary(); return; }
   const total = S.queue.length, it = S.item, t = S.topic;
-  const modeName = { drill: 'Дрочка', new: 'Новая тема', review: 'Повторение', relearn: 'Ещё раз', practice: 'Тренировка, на память не влияет' }[it.mode];
+  const modeName = { drill: 'Блиц', new: 'Новая тема', review: 'Повторение', relearn: 'Ещё раз', practice: 'Тренировка, на память не влияет' }[it.mode];
   const inQuiz = S.phase === 'task', n = inQuiz ? S.qs.length : 0;
-  const counter = S.drill ? `Дрочка · верно <b>${S.ok}</b> из ${S.ok + S.bad}` : (S.practice ? '' : `Тема <b>${S.i + 1}</b> из ${total} · `) + (inQuiz ? `вопрос <b>${S.t + 1}</b> из ${n}${S.qs[S.t].retry ? ' · ещё раз' : ''}` : modeName);
+  const counter = S.drill ? `Блиц · верно <b>${S.ok}</b> из ${S.ok + S.bad}` : (S.practice ? '' : `Тема <b>${S.i + 1}</b> из ${total} · `) + (inQuiz ? `вопрос <b>${S.t + 1}</b> из ${n}${S.qs[S.t].retry ? ' · ещё раз' : ''}` : modeName);
   const share = S.drill ? (S.ok + S.bad ? S.ok / (S.ok + S.bad) : 0) : S.practice ? S.t / Math.max(1, n) : (S.i + (inQuiz ? S.t / n * 0.9 : S.phase === 'result' ? 0.95 : 0)) / total;
   const top = `<div class="sess-top"><div class="sess-r"><span>${counter}</span><button class="linkish undo" data-act="undo" ${UNDO.length ? '' : 'disabled'} title="Ctrl+Z">↶ Отменить</button><button class="linkish" data-act="exit">Выйти</button></div><div class="lbar"><i style="width:${share * 100}%"></i></div></div>`;
   const flash = S.flash && S.phase !== 'result' ? `<div class="flash">${S.flash}</div>` : '';
@@ -4651,10 +4848,10 @@ function renderSession() {
   if (S.phase === 'read') {
     body = flash + cardOf();
     const nq = Math.min(QN_NEW, (t.bq || []).length + (t.q || []).length);
-    foot = `<div class="foot"><div class="foot-in"><small>Дальше ${nq} ${pl(nq, 'вопрос', 'вопроса', 'вопросов')}. Процент верных с первого раза станет памятью темы.</small><button class="btn" data-act="to-quiz">К вопросам · Enter</button></div></div>`;
+    foot = `<div class="foot"><div class="foot-in"><small>Дальше ${nq} ${pl(nq, 'вопрос', 'вопроса', 'вопросов')}. Процент верных с первого раза станет памятью темы.</small><button class="btn" data-act="to-quiz">К вопросам<span class="kh"> · Enter</span></button></div></div>`;
   } else if (S.phase === 'result') {
     body = resultHtml();
-    foot = `<div class="foot"><div class="foot-in"><small>Не тот клик? «Отменить» вернёт последний ответ.</small><button class="btn" data-act="commit">Дальше · Enter</button></div></div>`;
+    foot = `<div class="foot"><div class="foot-in"><small>Не тот клик? «Отменить» вернёт последний ответ.</small><button class="btn" data-act="commit">Дальше<span class="kh"> · Enter</span></button></div></div>`;
   } else {
     body = flash + (S.showCard ? `<div class="peek">${cardOf()}</div>` : '') + taskHtml();
     foot = taskFoot();
@@ -4671,7 +4868,7 @@ function resultHtml() {
   const miss = S.miss.map(i => S.qs[i].q);
   return `<section class="result g${g}"><div class="q-tag"><span>${rich(t.t)}</span></div>
     <div class="res-top"><div class="res-pct"><b>${pct(sc)}</b><small>%</small></div><div><h2>${word}</h2><p>${S.ok} из ${n} верно с первого раза${S.peek ? ', подсматривал тему' : ''}. Следующий повтор: <b>${next}</b>.</p></div></div>
-    ${miss.length ? `<h3>Где ошибся</h3><ul class="res-miss">${miss.map(q => `<li>${qHtml(q.q)}<div class="ja" lang="ja">${rich(rightAnswer(q))}</div><small>${rich(q.w)}</small></li>`).join('')}</ul>` : '<p class="res-clean">Без единой ошибки.</p>'}
+    ${miss.length ? `<h3>Где ошибся</h3><ul class="res-miss">${miss.map(q => `<li>${qHtml(q.q)}<div class="ja" lang="ja">${rich(rightAnswer(q))}</div>${q.w ? `<small>${rich(q.w)}</small>` : ""}</li>`).join('')}</ul>` : '<p class="res-clean">Без единой ошибки.</p>'}
   </section>`;
 }
 // Условие из таблицы учебника идёт до <br>, сам вопрос — после
@@ -4728,7 +4925,7 @@ function taskHtml() {
     }).join('')}</div>`;
   } else if (q.k === 'i') {
     const cls = a ? (a.ok ? 'ok' : 'no') : '';
-    w = `<div class="field ${q.full ? "long" : ""}"><input id="answer" class="${cls}" lang="ja" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ответ" value="${esc(S.typed)}" ${a ? 'readonly' : ''} aria-label="Ответ"></div>`;
+    w = `<div class="field ${q.full ? "long" : ""}"><input id="answer" class="${cls}" lang="ja" enterkeyhint="go" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ответ" value="${esc(S.typed)}" ${a ? 'readonly' : ''} aria-label="Ответ"></div>`;
   } else {
     const ansCls = a ? (a.ok ? 'ok' : 'no') : '';
     w = `<div class="tiles-ans ${ansCls}">${S.picked.map(id => { const x = S.pool.find(p => p.id === id); return `<button class="tile" ${a ? 'disabled' : ''} data-unpick="${id}">${rich(x.text)}</button>`; }).join('') || '<span class="tiles-ph">сюда встанут плитки</span>'}</div>
@@ -4742,9 +4939,9 @@ function taskHtml() {
 const rightAnswer = q => q.show || (q.k === 'c' ? q.o[0] : q.k === 'i' ? q.a[0] : q.t.join(' '));
 function taskFoot() {
   const q = S.q, a = S.answered;
-  if (a) return `<div class="foot"><div class="foot-in"><small>Enter</small><button class="btn" data-act="next">Дальше</button></div></div>`;
+  if (a) return `<div class="foot"><div class="foot-in"><small class="kh">Enter</small><button class="btn" data-act="next">Дальше</button></div></div>`;
   const left = `<span class="row-btns"><button class="linkish" data-act="dunno">Не знаю</button>${S.practice ? '' : `<button class="linkish" data-act="peek">${S.showCard ? 'Скрыть тему' : 'Подсмотреть тему'}</button>`}</span>`;
-  if (q.k === 'c') return `<div class="foot"><div class="foot-in">${left}<small>Клавиши 1–${S.opts.length}</small></div></div>`;
+  if (q.k === 'c') return `<div class="foot"><div class="foot-in">${left}<small class="kh">Клавиши 1–${S.opts.length}</small></div></div>`;
   if (q.k === 'i') return `<div class="foot"><div class="foot-in">${left}<button class="btn" data-act="check-input">Проверить</button></div></div>`;
   return `<div class="foot"><div class="foot-in">${left}<button class="btn" data-act="check-tiles" ${S.picked.length ? '' : 'disabled'}>Проверить</button></div></div>`;
 }
@@ -4776,7 +4973,9 @@ function showTip(html, x, y) {
   t.style.left = Math.max(8, Math.min(innerWidth - r.width - 8, x + 12)) / z + 'px';
   t.style.top = Math.max(8, y - r.height - 10) / z + 'px';
 }
+const canHover = window.matchMedia('(hover: hover)').matches;
 document.addEventListener('mousemove', e => {
+  if (!canHover) return;
   const el = e.target.closest && e.target.closest('[data-tip]');
   if (el) { showTip(el.dataset.tip, e.clientX, e.clientY); return; }
   hideTip();
