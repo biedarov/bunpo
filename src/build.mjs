@@ -22,7 +22,10 @@ ${js}
 </script>
 `;
 fs.writeFileSync(root + '../bunpo.html', html);
+// Сайт сам проверяет, не вышла ли новая версия (браузер телефона держит старую копию до 10 минут)
+const BUILD = String(Date.now());
+const UPDATE = `<script>(function(){var B='${BUILD}';function chk(){if(!/^https?:$/.test(location.protocol))return;fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/data-build="([0-9]+)"/);if(!m||m[1]===B)return;var k='bunpo.upd.'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(function(){})}chk();document.addEventListener('visibilitychange',function(){if(!document.hidden)chk()})})();</script>`;
 // Отдельная обёртка, чтобы файл открывался двойным щелчком без публикации
-const standalone = `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#09090c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bunpō"><meta name="format-detection" content="telephone=no"></head><body>\n${html}</body></html>`;
+const standalone = `<!doctype html><html lang="ru" data-build="${BUILD}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#09090c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bunpō"><meta name="format-detection" content="telephone=no"></head><body>\n${html}${UPDATE}</body></html>`;
 fs.writeFileSync(root + '../bunpo-local.html', standalone);
 console.log('bunpo.html', (html.length / 1024).toFixed(0) + ' KB');
