@@ -538,7 +538,7 @@ function startDrill() {
 function beginTask() {
   if (S.drill) { S.item = { id: S.qs[S.t].id, mode: 'drill' }; S.topic = BY_ID[S.qs[S.t].id]; }
   const q = S.qs[S.t].q;
-  S.q = q; S.answered = null; S.typed = '';
+  S.q = q; S.answered = null; S.typed = ''; S.hinted = false;
   if (q.k === 'c') S.opts = shuffle(q.o.map((text, i) => ({ text, right: i === 0 })));
   if (q.k === 'o') { S.pool = shuffle([...q.t, ...(q.d || [])].map((text, i) => ({ text, id: i }))); S.picked = []; }
 }
@@ -547,9 +547,10 @@ function submit(ok, extra) {
   if (S.answered) return;
   pushUndo();
   const cur = S.qs[S.t];
+  if (ok && S.hinted) { ok = false; extra = { ...extra, hinted: true }; }
   S.answered = { ok, ...extra };
   if (S.drill) {
-    if (ok) S.ok++; else { S.bad++; const p = penalize(st.cards[cur.id]); if (p) { S.answered.drop = p; save(); } }
+    if (ok) S.ok++; else if (S.answered.hinted) S.bad++; else { S.bad++; const p = penalize(st.cards[cur.id]); if (p) { S.answered.drop = p; save(); } }
   } else if (!cur.retry) { if (ok) S.ok++; else { S.bad++; S.miss.push(S.t); S.qs.push({ q: cur.q, retry: true }); } }
   render();
   if (ok && st.auto) S.timer = setTimeout(advance, 850);
@@ -571,6 +572,14 @@ function advance() {
   if (S.drill && S.t >= S.qs.length) { const nx = drillNext(); if (nx) S.qs.push(nx); }
   if (S.t < S.qs.length) { beginTask(); render(); focusInput(); return; }
   S.phase = S.practice ? 'done' : 'result'; render(); window.scrollTo(0, 0);
+}
+// Сначала только слова; куски фразы — по кнопке «Подсказка», тогда верный ответ не засчитывается
+function helpHtml(q) {
+  if (!q.help || !q.help.length) return '';
+  const full = S.hinted || (S.answered && !S.answered.ok), list = full ? q.help : (q.vocab || []);
+  const lab = full ? 'Подсказка, нужную форму пиши сам:' : list.length ? 'Слова:' : '';
+  const btn = full || S.answered ? '' : '<button class="linkish hint-btn" data-act="hint">Подсказка</button>';
+  return `<div class="qz-help">${lab ? `<span>${lab}</span>` : ''}${list.map(x => `<i lang="ja">${rich(x)}</i>`).join('')}${btn}</div>`;
 }
 function focusInput() { const el = document.getElementById('answer'); if (el) setTimeout(() => el.focus(), 0); }
 function renderSession() {
@@ -671,10 +680,10 @@ function taskHtml() {
     w = `<div class="tiles-ans ${ansCls}">${S.picked.map(id => { const x = S.pool.find(p => p.id === id); return `<button class="tile" ${a ? 'disabled' : ''} data-unpick="${id}">${rich(x.text)}</button>`; }).join('') || '<span class="tiles-ph">сюда встанут плитки</span>'}</div>
       <div class="tiles">${S.pool.map(p => `<button class="tile ${S.picked.includes(p.id) ? 'ghost' : ''}" ${a ? 'disabled' : ''} data-pick="${p.id}">${rich(p.text)}</button>`).join('')}</div>`;
   }
-  const fb = a ? `<div class="fb ${a.ok ? 'ok' : 'no'}"><div class="h">${a.ok ? 'Верно' : (a.skipped ? 'Правильный ответ' : 'Неверно. Правильно так:')}</div>${!a.ok ? `<div class="right ja" lang="ja">${rich(rightAnswer(q))}</div>` : ''}${q.w ? `<div class="why">${rich(q.w)}</div>` : ''}${a.drop ? `<div class="fb-drop">${rich(t.t)}: память ${pct(a.drop[0])}% → <b>${pct(a.drop[1])}%</b></div>` : ''}${q.k === 'i' && !a.ok && !a.skipped ? `<div class="fb-you">Ты написал: <span lang="ja">${esc(S.typed)}</span> <button class="linkish" data-act="accept">Мой ответ тоже верный</button></div>` : ''}</div>` : '';
+  const fb = a ? `<div class="fb ${a.ok ? 'ok' : a.hinted ? 'no hint' : 'no'}"><div class="h">${a.ok ? 'Верно' : a.hinted ? (S.drill ? 'Верно, но с подсказкой — не засчитано' : 'Верно, но с подсказкой. Вопрос вернётся в конце — ответь без неё') : (a.skipped ? 'Правильный ответ' : 'Неверно. Правильно так:')}</div>${!a.ok && !a.hinted ? `<div class="right ja" lang="ja">${rich(rightAnswer(q))}</div>` : ''}${q.w ? `<div class="why">${rich(q.w)}</div>` : ''}${a.drop ? `<div class="fb-drop">${rich(t.t)}: память ${pct(a.drop[0])}% → <b>${pct(a.drop[1])}%</b></div>` : ''}${q.k === 'i' && !a.ok && !a.skipped && !a.hinted ? `<div class="fb-you">Ты написал: <span lang="ja">${esc(S.typed)}</span> <button class="linkish" data-act="accept">Мой ответ тоже верный</button></div>` : ''}</div>` : '';
   const retry = S.qs[S.t].retry;
   return `<div class="quiz"><div class="qz-meta"><span>${rich(t.t)}</span>${q.s ? `<em class="q-src">учебник · ${q.s}</em>` : ''}${retry ? '<em class="q-src again">повтор ошибки · не в процент</em>' : ''}</div>
-    <section class="qz-card">${q.pre ? preHtml(q.pre) : ''}${qHtml(q.q, q.k)}${q.pre ? "" : `<div class="qz-how">${KIND_HOW[q.full ? "full" : q.k]}</div>`}${q.help && q.help.length ? `<div class="qz-help"><span>Слова в помощь, нужную форму пиши сам:</span>${q.help.map(x => `<i lang="ja">${rich(x)}</i>`).join("")}</div>` : ""}${w}${fb}</section></div>`;
+    <section class="qz-card">${q.pre ? preHtml(q.pre) : ''}${qHtml(q.q, q.k)}${q.pre ? "" : `<div class="qz-how">${KIND_HOW[q.full ? "full" : q.k]}</div>`}${helpHtml(q)}${w}${fb}</section></div>`;
 }
 const rightAnswer = q => q.show || (q.k === 'c' ? q.o[0] : q.k === 'i' ? q.a[0] : q.t.join(' '));
 function taskFoot() {
@@ -754,6 +763,7 @@ app.addEventListener('click', e => {
     case 'study-type': { const now = Date.now(), t = LEARN_TYPES.find(x => x.k === learnType); startSession(t.ids.filter(id => st.cards[id]).sort((a, b) => memoryOf(st.cards[a], now) - memoryOf(st.cards[b], now)).map(id => ({ id, mode: 'review' }))); break; }
     case 'exit': case 'to-today': { const stay = S && (S.practice || S.single); stopSession(); if (!stay) view = 'today'; render(); window.scrollTo(0, 0); break; }
     case 'next': advance(); break;
+    case 'hint': { S.hinted = true; const h = document.querySelector('.qz-help'); if (h) h.outerHTML = helpHtml(S.q); else render(); focusInput(); break; }
     case 'dunno': submit(false, { skipped: true, pick: -1 }); break;
     case 'check-input': checkTyped(); break;
     case 'check-tiles': checkTiles(); break;
@@ -806,6 +816,7 @@ app.addEventListener('change', e => {
   if (Number.isFinite(n) && n >= 0) { st.perDay = n; save(); }
   render();
 });
+app.addEventListener('pointerdown', e => { if (e.target.closest('[data-act=hint]')) e.preventDefault(); });
 app.addEventListener('compositionend', e => { if (e.target.id === 'answer') S.typed = e.target.value; });
 document.addEventListener('keydown', e => {
   if (!S) {

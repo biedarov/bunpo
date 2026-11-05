@@ -1010,3 +1010,6 @@ td.cz { border-radius: 0; }
   .view-today .ltypes { align-content: start; }
 }
 @media (max-width: 860px) { .bottom { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.qz-help .hint-btn { align-self: center; margin-left: 4px; font-size: 13px; color: var(--ink-2); }.quiz .fb.hint { background: color-mix(in srgb, var(--mark) 12%, transparent); border-color: color-mix(in srgb, var(--mark) 35%, transparent); }
+.quiz .fb.hint .h { color: var(--mark); }

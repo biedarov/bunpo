@@ -1017,6 +1017,9 @@ td.cz { border-radius: 0; }
   .view-today .ltypes { align-content: start; }
 }
 @media (max-width: 860px) { .bottom { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.qz-help .hint-btn { align-self: center; margin-left: 4px; font-size: 13px; color: var(--ink-2); }.quiz .fb.hint { background: color-mix(in srgb, var(--mark) 12%, transparent); border-color: color-mix(in srgb, var(--mark) 35%, transparent); }
+.quiz .fb.hint .h { color: var(--mark); }
 </style>
 <div id="app"></div>
 <div id="tip" hidden></div>
@@ -4037,11 +4040,29 @@ function keyTile(q) {
     (q.d || []).forEach(d => { const b = plainKana(d); if (b === a) return; const s = Math.max(pref(a, b), [...a].filter(ch => b.includes(ch)).length / 2); if (s > score) { score = s; best = i; } }); });
   return score >= 1 ? best : -1;
 }
+// Только словарь из кусков фразы: слова катаканой и иероглифические слова, без грамматики и окончаний
+const PARTICLE = /^[をはがでのともへや、。？！…・「」]|^$/;
+function vocabOf(chunks) {
+  const out = [];
+  chunks.forEach(raw => {
+    const s = raw.replace(/\{[^}]*\}/g, '');
+    (s.match(/[ァ-ヶー]{2,}/g) || []).forEach(w => out.push(w));
+    for (const m of s.matchAll(/[一-龯々]+/g)) {
+      const next = s.slice(m.index + m[0].length, m.index + m[0].length + 1);
+      const pre = /[おご]/.test(s[m.index - 1] || "") ? s[m.index - 1] : "";
+      const end = m.index + m[0].length;
+      let w = pre + m[0];
+      for (let k = 3; k > 0; k--) { const ext = w + s.slice(end, end + k); if (/^[ぁ-ん]+$/.test(s.slice(end, end + k)) && !/^[まてたなっんせ]/.test(s.slice(end, end + k)) && !/ない|なかっ/.test(ext) && /^[をはがにでのともへやか、。？！…・「」]|^$/.test(s.slice(end + k, end + k + 1)) && FURI[ext]) { w = ext; break; } }
+      if (w.length > pre.length + 1 || (PARTICLE.test(next) && (FURI[w] || FURI[m[0]]))) out.push(w);
+    }
+  });
+  return [...new Set(out)];
+}
 function sentFrom(q, n) {
   if (q.k === 'o' && q.t.length >= 2) {
     const key = keyTile(q);
     const words = q.t.filter((_, i) => i !== key).map(x => x.replace(/[。、？！]$/, ''));
-    return { k: 'i', full: true, q: q.q, a: [q.t.join(''), ...(q.alts || []).map(x => x.join(''))], help: shuffleSeed(words, n + 7), w: q.w, s: q.s, show: q.t.join(' '), from: q };
+    return { k: 'i', full: true, q: q.q, a: [q.t.join(''), ...(q.alts || []).map(x => x.join(''))], help: shuffleSeed(words, n + 7), vocab: vocabOf(words), w: q.w, s: q.s, show: q.t.join(' '), from: q };
   }
   if (q.k === 'c' && !/[а-яё]/i.test(q.o[0])) {
     const right = q.o[0].split(/\s+/);
@@ -4050,7 +4071,7 @@ function sentFrom(q, n) {
     q.o.slice(1).forEach(o => { const w = o.split(/\s+/); if (w.length !== right.length) return;
       const d = right.map((x, i) => x !== w[i] ? i : -1).filter(i => i >= 0); if (d.length && d.length < right.length && (!diff || d.length < diff.length)) diff = d; });
     const words = right.filter((_, i) => !(diff || []).includes(i)).map(x => x.replace(/[。、？！]$/, '').replace(/^(はい|いいえ|ええ)、/, ''));
-    return { k: 'i', full: true, q: q.q, a: [q.o[0]], help: shuffleSeed(words.filter(Boolean), n + 3), w: q.w, s: q.s, show: q.o[0], from: q };
+    return { k: 'i', full: true, q: q.q, a: [q.o[0]], help: shuffleSeed(words.filter(Boolean), n + 3), vocab: vocabOf(words.filter(Boolean)), w: q.w, s: q.s, show: q.o[0], from: q };
   }
   return null;
 }
@@ -4798,7 +4819,7 @@ function startDrill() {
 function beginTask() {
   if (S.drill) { S.item = { id: S.qs[S.t].id, mode: 'drill' }; S.topic = BY_ID[S.qs[S.t].id]; }
   const q = S.qs[S.t].q;
-  S.q = q; S.answered = null; S.typed = '';
+  S.q = q; S.answered = null; S.typed = ''; S.hinted = false;
   if (q.k === 'c') S.opts = shuffle(q.o.map((text, i) => ({ text, right: i === 0 })));
   if (q.k === 'o') { S.pool = shuffle([...q.t, ...(q.d || [])].map((text, i) => ({ text, id: i }))); S.picked = []; }
 }
@@ -4807,9 +4828,10 @@ function submit(ok, extra) {
   if (S.answered) return;
   pushUndo();
   const cur = S.qs[S.t];
+  if (ok && S.hinted) { ok = false; extra = { ...extra, hinted: true }; }
   S.answered = { ok, ...extra };
   if (S.drill) {
-    if (ok) S.ok++; else { S.bad++; const p = penalize(st.cards[cur.id]); if (p) { S.answered.drop = p; save(); } }
+    if (ok) S.ok++; else if (S.answered.hinted) S.bad++; else { S.bad++; const p = penalize(st.cards[cur.id]); if (p) { S.answered.drop = p; save(); } }
   } else if (!cur.retry) { if (ok) S.ok++; else { S.bad++; S.miss.push(S.t); S.qs.push({ q: cur.q, retry: true }); } }
   render();
   if (ok && st.auto) S.timer = setTimeout(advance, 850);
@@ -4831,6 +4853,14 @@ function advance() {
   if (S.drill && S.t >= S.qs.length) { const nx = drillNext(); if (nx) S.qs.push(nx); }
   if (S.t < S.qs.length) { beginTask(); render(); focusInput(); return; }
   S.phase = S.practice ? 'done' : 'result'; render(); window.scrollTo(0, 0);
+}
+// Сначала только слова; куски фразы — по кнопке «Подсказка», тогда верный ответ не засчитывается
+function helpHtml(q) {
+  if (!q.help || !q.help.length) return '';
+  const full = S.hinted || (S.answered && !S.answered.ok), list = full ? q.help : (q.vocab || []);
+  const lab = full ? 'Подсказка, нужную форму пиши сам:' : list.length ? 'Слова:' : '';
+  const btn = full || S.answered ? '' : '<button class="linkish hint-btn" data-act="hint">Подсказка</button>';
+  return `<div class="qz-help">${lab ? `<span>${lab}</span>` : ''}${list.map(x => `<i lang="ja">${rich(x)}</i>`).join('')}${btn}</div>`;
 }
 function focusInput() { const el = document.getElementById('answer'); if (el) setTimeout(() => el.focus(), 0); }
 function renderSession() {
@@ -4931,10 +4961,10 @@ function taskHtml() {
     w = `<div class="tiles-ans ${ansCls}">${S.picked.map(id => { const x = S.pool.find(p => p.id === id); return `<button class="tile" ${a ? 'disabled' : ''} data-unpick="${id}">${rich(x.text)}</button>`; }).join('') || '<span class="tiles-ph">сюда встанут плитки</span>'}</div>
       <div class="tiles">${S.pool.map(p => `<button class="tile ${S.picked.includes(p.id) ? 'ghost' : ''}" ${a ? 'disabled' : ''} data-pick="${p.id}">${rich(p.text)}</button>`).join('')}</div>`;
   }
-  const fb = a ? `<div class="fb ${a.ok ? 'ok' : 'no'}"><div class="h">${a.ok ? 'Верно' : (a.skipped ? 'Правильный ответ' : 'Неверно. Правильно так:')}</div>${!a.ok ? `<div class="right ja" lang="ja">${rich(rightAnswer(q))}</div>` : ''}${q.w ? `<div class="why">${rich(q.w)}</div>` : ''}${a.drop ? `<div class="fb-drop">${rich(t.t)}: память ${pct(a.drop[0])}% → <b>${pct(a.drop[1])}%</b></div>` : ''}${q.k === 'i' && !a.ok && !a.skipped ? `<div class="fb-you">Ты написал: <span lang="ja">${esc(S.typed)}</span> <button class="linkish" data-act="accept">Мой ответ тоже верный</button></div>` : ''}</div>` : '';
+  const fb = a ? `<div class="fb ${a.ok ? 'ok' : a.hinted ? 'no hint' : 'no'}"><div class="h">${a.ok ? 'Верно' : a.hinted ? (S.drill ? 'Верно, но с подсказкой — не засчитано' : 'Верно, но с подсказкой. Вопрос вернётся в конце — ответь без неё') : (a.skipped ? 'Правильный ответ' : 'Неверно. Правильно так:')}</div>${!a.ok && !a.hinted ? `<div class="right ja" lang="ja">${rich(rightAnswer(q))}</div>` : ''}${q.w ? `<div class="why">${rich(q.w)}</div>` : ''}${a.drop ? `<div class="fb-drop">${rich(t.t)}: память ${pct(a.drop[0])}% → <b>${pct(a.drop[1])}%</b></div>` : ''}${q.k === 'i' && !a.ok && !a.skipped && !a.hinted ? `<div class="fb-you">Ты написал: <span lang="ja">${esc(S.typed)}</span> <button class="linkish" data-act="accept">Мой ответ тоже верный</button></div>` : ''}</div>` : '';
   const retry = S.qs[S.t].retry;
   return `<div class="quiz"><div class="qz-meta"><span>${rich(t.t)}</span>${q.s ? `<em class="q-src">учебник · ${q.s}</em>` : ''}${retry ? '<em class="q-src again">повтор ошибки · не в процент</em>' : ''}</div>
-    <section class="qz-card">${q.pre ? preHtml(q.pre) : ''}${qHtml(q.q, q.k)}${q.pre ? "" : `<div class="qz-how">${KIND_HOW[q.full ? "full" : q.k]}</div>`}${q.help && q.help.length ? `<div class="qz-help"><span>Слова в помощь, нужную форму пиши сам:</span>${q.help.map(x => `<i lang="ja">${rich(x)}</i>`).join("")}</div>` : ""}${w}${fb}</section></div>`;
+    <section class="qz-card">${q.pre ? preHtml(q.pre) : ''}${qHtml(q.q, q.k)}${q.pre ? "" : `<div class="qz-how">${KIND_HOW[q.full ? "full" : q.k]}</div>`}${helpHtml(q)}${w}${fb}</section></div>`;
 }
 const rightAnswer = q => q.show || (q.k === 'c' ? q.o[0] : q.k === 'i' ? q.a[0] : q.t.join(' '));
 function taskFoot() {
@@ -5014,6 +5044,7 @@ app.addEventListener('click', e => {
     case 'study-type': { const now = Date.now(), t = LEARN_TYPES.find(x => x.k === learnType); startSession(t.ids.filter(id => st.cards[id]).sort((a, b) => memoryOf(st.cards[a], now) - memoryOf(st.cards[b], now)).map(id => ({ id, mode: 'review' }))); break; }
     case 'exit': case 'to-today': { const stay = S && (S.practice || S.single); stopSession(); if (!stay) view = 'today'; render(); window.scrollTo(0, 0); break; }
     case 'next': advance(); break;
+    case 'hint': { S.hinted = true; const h = document.querySelector('.qz-help'); if (h) h.outerHTML = helpHtml(S.q); else render(); focusInput(); break; }
     case 'dunno': submit(false, { skipped: true, pick: -1 }); break;
     case 'check-input': checkTyped(); break;
     case 'check-tiles': checkTiles(); break;
@@ -5066,6 +5097,7 @@ app.addEventListener('change', e => {
   if (Number.isFinite(n) && n >= 0) { st.perDay = n; save(); }
   render();
 });
+app.addEventListener('pointerdown', e => { if (e.target.closest('[data-act=hint]')) e.preventDefault(); });
 app.addEventListener('compositionend', e => { if (e.target.id === 'answer') S.typed = e.target.value; });
 document.addEventListener('keydown', e => {
   if (!S) {

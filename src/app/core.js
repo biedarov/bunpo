@@ -232,11 +232,29 @@ function keyTile(q) {
     (q.d || []).forEach(d => { const b = plainKana(d); if (b === a) return; const s = Math.max(pref(a, b), [...a].filter(ch => b.includes(ch)).length / 2); if (s > score) { score = s; best = i; } }); });
   return score >= 1 ? best : -1;
 }
+// Только словарь из кусков фразы: слова катаканой и иероглифические слова, без грамматики и окончаний
+const PARTICLE = /^[をはがでのともへや、。？！…・「」]|^$/;
+function vocabOf(chunks) {
+  const out = [];
+  chunks.forEach(raw => {
+    const s = raw.replace(/\{[^}]*\}/g, '');
+    (s.match(/[ァ-ヶー]{2,}/g) || []).forEach(w => out.push(w));
+    for (const m of s.matchAll(/[一-龯々]+/g)) {
+      const next = s.slice(m.index + m[0].length, m.index + m[0].length + 1);
+      const pre = /[おご]/.test(s[m.index - 1] || "") ? s[m.index - 1] : "";
+      const end = m.index + m[0].length;
+      let w = pre + m[0];
+      for (let k = 3; k > 0; k--) { const ext = w + s.slice(end, end + k); if (/^[ぁ-ん]+$/.test(s.slice(end, end + k)) && !/^[まてたなっんせ]/.test(s.slice(end, end + k)) && !/ない|なかっ/.test(ext) && /^[をはがにでのともへやか、。？！…・「」]|^$/.test(s.slice(end + k, end + k + 1)) && FURI[ext]) { w = ext; break; } }
+      if (w.length > pre.length + 1 || (PARTICLE.test(next) && (FURI[w] || FURI[m[0]]))) out.push(w);
+    }
+  });
+  return [...new Set(out)];
+}
 function sentFrom(q, n) {
   if (q.k === 'o' && q.t.length >= 2) {
     const key = keyTile(q);
     const words = q.t.filter((_, i) => i !== key).map(x => x.replace(/[。、？！]$/, ''));
-    return { k: 'i', full: true, q: q.q, a: [q.t.join(''), ...(q.alts || []).map(x => x.join(''))], help: shuffleSeed(words, n + 7), w: q.w, s: q.s, show: q.t.join(' '), from: q };
+    return { k: 'i', full: true, q: q.q, a: [q.t.join(''), ...(q.alts || []).map(x => x.join(''))], help: shuffleSeed(words, n + 7), vocab: vocabOf(words), w: q.w, s: q.s, show: q.t.join(' '), from: q };
   }
   if (q.k === 'c' && !/[а-яё]/i.test(q.o[0])) {
     const right = q.o[0].split(/\s+/);
@@ -245,7 +263,7 @@ function sentFrom(q, n) {
     q.o.slice(1).forEach(o => { const w = o.split(/\s+/); if (w.length !== right.length) return;
       const d = right.map((x, i) => x !== w[i] ? i : -1).filter(i => i >= 0); if (d.length && d.length < right.length && (!diff || d.length < diff.length)) diff = d; });
     const words = right.filter((_, i) => !(diff || []).includes(i)).map(x => x.replace(/[。、？！]$/, '').replace(/^(はい|いいえ|ええ)、/, ''));
-    return { k: 'i', full: true, q: q.q, a: [q.o[0]], help: shuffleSeed(words.filter(Boolean), n + 3), w: q.w, s: q.s, show: q.o[0], from: q };
+    return { k: 'i', full: true, q: q.q, a: [q.o[0]], help: shuffleSeed(words.filter(Boolean), n + 3), vocab: vocabOf(words.filter(Boolean)), w: q.w, s: q.s, show: q.o[0], from: q };
   }
   return null;
 }
