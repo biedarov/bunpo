@@ -538,7 +538,7 @@ function startDrill() {
 function beginTask() {
   if (S.drill) { S.item = { id: S.qs[S.t].id, mode: 'drill' }; S.topic = BY_ID[S.qs[S.t].id]; }
   const q = S.qs[S.t].q;
-  S.q = q; S.answered = null; S.typed = ''; S.hinted = false;
+  S.q = q; S.answered = null; S.typed = ''; S.hinted = false; S.hintLvl = 0;
   if (q.k === 'c') S.opts = shuffle(q.o.map((text, i) => ({ text, right: i === 0 })));
   if (q.k === 'o') { S.pool = shuffle([...q.t, ...(q.d || [])].map((text, i) => ({ text, id: i }))); S.picked = []; }
 }
@@ -576,10 +576,11 @@ function advance() {
 // Сначала только слова; куски фразы — по кнопке «Подсказка», тогда верный ответ не засчитывается
 function helpHtml(q) {
   if (!q.help || !q.help.length) return '';
-  const full = S.hinted || (S.answered && !S.answered.ok), list = full ? q.help : (q.vocab || []);
-  const lab = full ? 'Подсказка, нужную форму пиши сам:' : list.length ? 'Слова:' : '';
-  const btn = full || S.answered ? '' : '<button class="linkish hint-btn" data-act="hint">Подсказка</button>';
-  return `<div class="qz-help">${lab ? `<span>${lab}</span>` : ''}${list.map(x => `<i lang="ja">${rich(x)}</i>`).join('')}${btn}</div>`;
+  const vocab = q.vocab || [], lvl = S.answered && !S.answered.ok ? 2 : (S.hintLvl || 0);
+  if (lvl === 0) return S.answered ? '' : '<div class="qz-help"><button class="linkish hint-btn" data-act="hint">Подсказка</button></div>';
+  const list = (lvl === 1 ? vocab : q.help).filter(x => /[぀-ヿ㐀-鿿A-Za-z0-9０-９]/.test(x)), lab = lvl === 1 ? 'Слова:' : 'Куски фразы, нужную форму пиши сам:';
+  const more = lvl === 1 && !S.answered ? '<button class="linkish hint-btn" data-act="hint">Ещё подсказка</button>' : '';
+  return `<div class="qz-help"><span>${lab}</span>${list.map(x => `<i lang="ja">${rich(x)}</i>`).join('')}${more}</div>`;
 }
 function focusInput() { const el = document.getElementById('answer'); if (el) setTimeout(() => el.focus(), 0); }
 function renderSession() {
@@ -763,7 +764,7 @@ app.addEventListener('click', e => {
     case 'study-type': { const now = Date.now(), t = LEARN_TYPES.find(x => x.k === learnType); startSession(t.ids.filter(id => st.cards[id]).sort((a, b) => memoryOf(st.cards[a], now) - memoryOf(st.cards[b], now)).map(id => ({ id, mode: 'review' }))); break; }
     case 'exit': case 'to-today': { const stay = S && (S.practice || S.single); stopSession(); if (!stay) view = 'today'; render(); window.scrollTo(0, 0); break; }
     case 'next': advance(); break;
-    case 'hint': { S.hinted = true; const h = document.querySelector('.qz-help'); if (h) h.outerHTML = helpHtml(S.q); else render(); focusInput(); break; }
+    case 'hint': { S.hinted = true; S.hintLvl = !S.hintLvl && (S.q.vocab || []).length ? 1 : 2; const h = document.querySelector('.qz-help'); if (h) h.outerHTML = helpHtml(S.q); else render(); focusInput(); break; }
     case 'dunno': submit(false, { skipped: true, pick: -1 }); break;
     case 'check-input': checkTyped(); break;
     case 'check-tiles': checkTiles(); break;
