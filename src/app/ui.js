@@ -378,7 +378,7 @@ function viewSheet() {
 
 function viewMap() {
   const v = MAP_VERBS[mapVerb], c = conj(v);
-  const memTag = id => { const k = st.cards[id]; return k ? pct(memoryOf(k)) + '%' : id; };
+  const memTag = id => { const k = st.cards[id]; return k ? pct(memoryOf(k)) + '%' : ''; };
   const bases = MAP_GROUPS.flatMap(g => g.rows).map(r => {
     const title = typeof r.title === 'function' ? r.title(c) : r.title;
     const items = r.items.filter(i => (i[3] !== 'trans' || v.trans) && (i[3] !== 'notmove' || (v.d !== '行く' && v.type !== 'くる')))
