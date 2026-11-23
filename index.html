@@ -1,4 +1,4 @@
-<!doctype html><html lang="ru" data-build="1795473920815"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#09090c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bunpō"><meta name="format-detection" content="telephone=no"></head><body>
+<!doctype html><html lang="ru" data-build="1795474028900"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#09090c"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Bunpō"><meta name="format-detection" content="telephone=no"></head><body>
 <title>Bunpō N5–N4</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4660,7 +4660,7 @@ function viewSheet() {
 function viewMap() {
   const v = MAP_VERBS[mapVerb], c = conj(v);
   const memTag = id => { const k = st.cards[id]; return k ? pct(memoryOf(k)) + '%' : ''; };
-  const bases = MAP_GROUPS.flatMap(g => g.rows).map(r => {
+  const bases = MAP_GROUPS.filter(g => g.verb).flatMap(g => g.rows).map(r => {
     const title = typeof r.title === 'function' ? r.title(c) : r.title;
     const items = r.items.filter(i => (i[3] !== 'trans' || v.trans) && (i[3] !== 'notmove' || (v.d !== '行く' && v.type !== 'くる')))
       .map(i => ({ jp: typeof i[0] === 'function' ? i[0](c) : i[0], ru: i[1], id: i[2] })).sort((a, b) => idNum(a.id) - idNum(b.id));
@@ -4671,11 +4671,7 @@ function viewMap() {
   return `<header class="today-h"><h1>Карта форм</h1><p>Одна форма глагола, всё, что к ней цепляется. Выбери глагол, нажми на форму, чтобы открыть тему.</p></header>
     <div class="map-bar"><div class="tabs">${MAP_VERBS.map((m, i) => `<button class="tab ${i === mapVerb ? 'on' : ''}" lang="ja" data-verb="${i}">${furiHtml(m.d || m.label)}</button>`).join('')}</div>
     <div class="legend"><span><i class="tint-m1"></i>&lt;65%</span><span><i class="tint-m2"></i>65–80</span><span><i class="tint-m3"></i>80–90</span><span><i class="tint-m4"></i>90–97</span><span><i class="tint-m5"></i>97–100</span><span><i style="border:1px solid var(--line-2)"></i>ещё не пройдена</span></div></div>
-    ${bases}
-    <section><div class="sec-h"><h2>Перед чем что меняется</h2><span>сущ. и な-прил. ведут себя по-разному</span></div>
-      <div class="tbl-w"><table><thead><tr>${MAP_ADAPTER.h.map(h => `<th>${rich(h)}</th>`).join('')}</tr></thead><tbody>${MAP_ADAPTER.r.map(x => `<tr><td>${rich(x[0])}</td><td>${rich(x[1])}</td><td>${rich(x[2])}</td><td>${rich(x[3])}</td><td>${x[4].map(id => `<button class="linkish" data-topic="${id}">${id}</button>`).join(' ')}</td></tr>`).join('')}</tbody></table></div></section>
-    <section><div class="sec-h"><h2>Что получается на выходе</h2><span>и спрягается дальше по правилам этого типа</span></div>
-      <div class="kinds">${MAP_KINDS.map(([k, ids]) => `<div class="kind"><b>${rich(k)}</b><div>${ids.map(chip).join('')}</div></div>`).join('')}</div></section>`;
+    ${bases}`;
 }
 
 // ─── Настройки ───────────────────────────────────────────
@@ -5139,4 +5135,4 @@ setInterval(() => { if (!S && view === 'today') render(); }, 60000);
 
 })();
 </script>
-<script>(function(){var B='1795473920815';function chk(){if(!/^https?:$/.test(location.protocol))return;fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/data-build="([0-9]+)"/);if(!m||m[1]===B)return;var k='bunpo.upd.'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(function(){})}chk();document.addEventListener('visibilitychange',function(){if(!document.hidden)chk()})})();</script></body></html>
+<script>(function(){var B='1795474028900';function chk(){if(!/^https?:$/.test(location.protocol))return;fetch(location.pathname+'?check='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/data-build="([0-9]+)"/);if(!m||m[1]===B)return;var k='bunpo.upd.'+m[1];try{if(sessionStorage.getItem(k))return;sessionStorage.setItem(k,'1')}catch(e){}location.replace(location.pathname+'?v='+m[1]+location.hash)}).catch(function(){})}chk();document.addEventListener('visibilitychange',function(){if(!document.hidden)chk()})})();</script></body></html>

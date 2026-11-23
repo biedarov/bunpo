@@ -38,7 +38,6 @@ for (const g of X.MAP_GROUPS) for (const r of g.rows) for (const it of r.items) 
   if (!X.BY_ID[it[2]]) bad('таблица: нет темы ' + it[2]);
   if (typeof it[0] === 'function') for (const v of X.MAP_VERBS) { const s = it[0](X.conj(v)); if (!s || /undefined/.test(s)) bad('таблица: ' + it[2] + ' для ' + (v.d || v.type)); }
 }
-X.TOPICS.forEach(t => { if (!onMap.has(t.id)) bad('нет в таблице: ' + t.id); });
 for (const g of X.MAP_GROUPS) for (const r of g.rows) if (!X.ROW_WHY[r.name]) bad('строка без логики: ' + r.name);
 
 // Типы работы: каждая тема ровно в одном

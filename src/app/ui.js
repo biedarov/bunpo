@@ -379,7 +379,7 @@ function viewSheet() {
 function viewMap() {
   const v = MAP_VERBS[mapVerb], c = conj(v);
   const memTag = id => { const k = st.cards[id]; return k ? pct(memoryOf(k)) + '%' : ''; };
-  const bases = MAP_GROUPS.flatMap(g => g.rows).map(r => {
+  const bases = MAP_GROUPS.filter(g => g.verb).flatMap(g => g.rows).map(r => {
     const title = typeof r.title === 'function' ? r.title(c) : r.title;
     const items = r.items.filter(i => (i[3] !== 'trans' || v.trans) && (i[3] !== 'notmove' || (v.d !== '行く' && v.type !== 'くる')))
       .map(i => ({ jp: typeof i[0] === 'function' ? i[0](c) : i[0], ru: i[1], id: i[2] })).sort((a, b) => idNum(a.id) - idNum(b.id));
@@ -390,11 +390,7 @@ function viewMap() {
   return `<header class="today-h"><h1>Карта форм</h1><p>Одна форма глагола, всё, что к ней цепляется. Выбери глагол, нажми на форму, чтобы открыть тему.</p></header>
     <div class="map-bar"><div class="tabs">${MAP_VERBS.map((m, i) => `<button class="tab ${i === mapVerb ? 'on' : ''}" lang="ja" data-verb="${i}">${furiHtml(m.d || m.label)}</button>`).join('')}</div>
     <div class="legend"><span><i class="tint-m1"></i>&lt;65%</span><span><i class="tint-m2"></i>65–80</span><span><i class="tint-m3"></i>80–90</span><span><i class="tint-m4"></i>90–97</span><span><i class="tint-m5"></i>97–100</span><span><i style="border:1px solid var(--line-2)"></i>ещё не пройдена</span></div></div>
-    ${bases}
-    <section><div class="sec-h"><h2>Перед чем что меняется</h2><span>сущ. и な-прил. ведут себя по-разному</span></div>
-      <div class="tbl-w"><table><thead><tr>${MAP_ADAPTER.h.map(h => `<th>${rich(h)}</th>`).join('')}</tr></thead><tbody>${MAP_ADAPTER.r.map(x => `<tr><td>${rich(x[0])}</td><td>${rich(x[1])}</td><td>${rich(x[2])}</td><td>${rich(x[3])}</td><td>${x[4].map(id => `<button class="linkish" data-topic="${id}">${id}</button>`).join(' ')}</td></tr>`).join('')}</tbody></table></div></section>
-    <section><div class="sec-h"><h2>Что получается на выходе</h2><span>и спрягается дальше по правилам этого типа</span></div>
-      <div class="kinds">${MAP_KINDS.map(([k, ids]) => `<div class="kind"><b>${rich(k)}</b><div>${ids.map(chip).join('')}</div></div>`).join('')}</div></section>`;
+    ${bases}`;
 }
 
 // ─── Настройки ───────────────────────────────────────────
